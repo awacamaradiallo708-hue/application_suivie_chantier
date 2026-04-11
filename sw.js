@@ -3,7 +3,7 @@ const ASSETS = [
   './',
   'index.html',
   'manifest.json',
-  'logo_des_entrepris.PNG',
+  'logo_des_entreprise.PNG',
   'https://img.icons8.com/color/192/evergreen-tree.png',
   'https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js',
   'https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js',
