@@ -1,10 +1,10 @@
-const CACHE_NAME = 'chantier-v11';
+const CACHE_NAME = 'chantier-v12';
 const ASSETS = [
   './',
   'index.html',
   'manifest.json',
-  'logo_des_entrepris.PNG', // Nom de fichier corrigé
-  'https://img.icons8.com/color/192/tree.png',
+  'logo_des_entrepris.PNG',
+  'https://img.icons8.com/color/192/evergreen-tree.png',
   'https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js',
   'https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js',
   'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js'

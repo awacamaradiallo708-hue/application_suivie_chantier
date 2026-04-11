@@ -31,7 +31,7 @@
         button { width: 100%; padding: 15px; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: background 0.3s; margin-top: 10px; }
         button[type="submit"] { background-color: var(--secondary); color: white; }
         .btn-add { background-color: var(--accent); color: white; width: auto; padding: 10px 20px; }
-        .equipe-row { background: #f1f1f1; padding: 10px; border-radius: 8px; margin-bottom: 10px; display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 5px; align-items: center; }
+        .equipe-row { background: #f1f1f1; padding: 10px; border-radius: 8px; margin-bottom: 10px; display: grid; grid-template-columns: 1.5fr 1fr 1fr 0.5fr auto; gap: 5px; align-items: center; }
         .equipe-row input { margin: 0; padding: 8px; }
         .tech-table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
         .tech-table th, .tech-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
@@ -47,7 +47,7 @@
 
 <div class="container">
     <div class="logo-header">
-        <img src="logo_des_entrepris.PNG" alt="Logo Entreprise">
+        <img src="./logo_des_entrepris.PNG" alt="Logo Entreprise">
     </div>
     <div class="header-project">
         <h2>Projet : Plantation d’alignement et Reboisement - Lot 2 (Guéoul - Louga)</h2>
@@ -218,14 +218,28 @@
         // appCheck.activate('VOTRE_CLE_SITE_RECAPTCHA_V3', true);
     } catch (err) { console.warn("App Check non configuré"); }
 
+    // Gestion de l'affichage du champ "Autre" pour les équipes
+    function toggleAutreEquipe(selectEl) {
+        const autreInput = selectEl.parentElement.querySelector('.eq-autre');
+        autreInput.style.display = (selectEl.value === 'Autre') ? 'block' : 'none';
+    }
+
     function addEquipe() {
         const div = document.createElement('div');
         div.className = 'equipe-row';
         div.innerHTML = `
-            <input type="text" placeholder="Nom" class="eq-nom">
+            <div style="display: flex; flex-direction: column; gap: 5px;">
+                <select class="eq-type" onchange="toggleAutreEquipe(this)">
+                    <option value="Équipe d'arrosage">Équipe d'arrosage</option>
+                    <option value="Équipe de reboisement">Équipe de reboisement</option>
+                    <option value="Autre">Autre (préciser)</option>
+                </select>
+                <input type="text" placeholder="Quelle équipe ?" class="eq-autre" style="display:none">
+            </div>
+            <input type="text" placeholder="Nom responsable" class="eq-nom">
             <input type="text" placeholder="Téléphone" class="eq-tel">
-            <input type="number" placeholder="Nb" class="eq-nb" style="width:50px">
-            <button type="button" style="background:#dc3545; color:white" onclick="this.parentElement.remove()">✕</button>
+            <input type="number" placeholder="Effectif" class="eq-nb">
+            <button type="button" style="background:#dc3545; color:white; padding: 5px 10px;" onclick="this.parentElement.remove()">✕</button>
         `;
         document.getElementById('equipes').appendChild(div);
     }
@@ -243,11 +257,15 @@
         e.preventDefault();
         
         const techData = Array.from(document.querySelectorAll('.tech-val')).map(i => `${i.dataset.name}: ${i.value}`).join(' | ');
-        const equipes = Array.from(document.querySelectorAll('.equipe-row')).map(row => ({
-            nom: row.querySelector('.eq-nom').value,
-            tel: row.querySelector('.eq-tel').value,
-            nb: row.querySelector('.eq-nb').value
-        }));
+        const equipes = Array.from(document.querySelectorAll('.equipe-row')).map(row => {
+            const typeSelect = row.querySelector('.eq-type').value;
+            return {
+                type: typeSelect === 'Autre' ? row.querySelector('.eq-autre').value : typeSelect,
+                nom: row.querySelector('.eq-nom').value,
+                tel: row.querySelector('.eq-tel').value,
+                nb: row.querySelector('.eq-nb').value
+            };
+        });
 
         const data = {
             date: document.getElementById('date').value,
