@@ -5,12 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Suivi de Chantier</title>
     <link rel="manifest" href="manifest.json">
-    <!-- Intégration des SDK Firebase (Version Compat pour simplicité) -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js" crossorigin="anonymous"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js" crossorigin="anonymous"></script>
-    <!-- SDK App Check (à décommenter si vous utilisez App Check) -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-check-compat.js" crossorigin="anonymous"></script>
-    <!-- Bibliothèque pour l'export PDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" crossorigin="anonymous"></script>
     <style>
         :root { --primary: #1a252f; --secondary: #27ae60; --accent: #2980b9; --bg-sec: #f8f9fa; }
@@ -36,10 +32,8 @@
         .tech-table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
         .tech-table th, .tech-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
         .tech-table th { background: #f2f2f2; font-size: 0.8rem; }
-        /* Styles pour rendre le tableau des équipes plus compact dans le PDF */
         .pdf-summary { font-size: 0.75rem; width: 100%; margin-top: 5px; }
         .pdf-summary th, .pdf-summary td { padding: 3px 5px !important; border: 1px solid #ccc; }
-        /* Style pour les valeurs dans le PDF */
         .pdf-value { font-weight: bold; color: #2c3e50; border-bottom: 1px solid #bdc3c7; display: inline-block; min-width: 50px; }
         .tech-table input { border: none; background: transparent; width: 100%; }
         .export-btn { background-color: #f39c12; color: white; text-decoration: none; display: block; text-align: center; padding: 15px; border-radius: 8px; margin-top: 10px; font-weight: bold; }
@@ -47,28 +41,38 @@
         .btn-view { background: var(--accent); color: white; border: none; padding: 8px; border-radius: 4px; cursor: pointer; width: auto; font-size: 0.8rem; }
         #loading-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); color: white; justify-content: center; align-items: center; z-index: 1000; }
         @media print { .no-print { display: none !important; } }
+        
+        /* Styles pour l'export PDF/Word */
+        .export-content .form-input-value {
+            font-weight: normal;
+            margin-left: 10px;
+            color: #2c3e50;
+        }
+        .export-section {
+            margin-bottom: 20px;
+            page-break-inside: avoid;
+        }
+        .export-label {
+            font-weight: bold;
+            color: var(--primary);
+            margin-top: 10px;
+        }
+        .export-value {
+            margin-left: 15px;
+            padding: 5px;
+            border-left: 3px solid var(--secondary);
+        }
     </style>
 </head>
 <body>
 
-<div class="container">
+<div class="container" id="report-container">
     <div class="logo-header">
-        <!-- Logo SVG intégré (Évite les erreurs 404 et s'affiche parfaitement en PDF/Word) -->
-        <svg width="120" height="120" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="100" cy="100" r="95" fill="none" stroke="#27ae60" stroke-width="5"/>
-            <path d="M100 160 V60 M100 80 L70 110 M100 80 L130 110 M100 100 L75 135 M100 100 L125 135" 
-                  stroke="#1a252f" stroke-width="8" stroke-linecap="round"/>
-            <circle cx="70" cy="105" r="15" fill="#27ae60"/>
-            <circle cx="130" cy="105" r="15" fill="#2ecc71"/>
-            <circle cx="75" cy="135" r="12" fill="#27ae60"/>
-            <circle cx="125" cy="135" r="12" fill="#2ecc71"/>
-            <circle cx="100" cy="65" r="20" fill="#27ae60"/>
-            <text x="100" y="185" font-family="Arial" font-size="14" font-weight="bold" 
-                  fill="#1a252f" text-anchor="middle">APERAM - LOUGA</text>
-        </svg>
+        <!-- Utilisation d'une image base64 intégrée pour garantir l'affichage -->
+        <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIwIiBoZWlnaHQ9IjEyMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CiAgICAgICAgICAgIDxjaXJjbGUgY3g9IjEwMCIgY3k9IjEwMCIgcj0iOTUiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzI3YWU2MCIgc3Ryb2tlLXdpZHRoPSI1Ii8+CiAgICAgICAgICAgIDxwYXRoIGQ9Ik0xMDAgMTYwIFY2MCBNMTAwIDgwIEw3MCAxMTAgTTEwMCA4MCBMMTMwIDExMCBNMTAwIDEwMCBMNzUgMTM1IE0xMDAgMTAwIEwxMjUgMTM1IiAKICAgICAgICAgICAgICAgICAgc3Ryb2tlPSIjMWEyNTJmIiBzdHJva2Utd2lkdGg9IjgiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgogICAgICAgICAgICA8Y2lyY2xlIGN4PSI3MCIgY3k9IjEwNSIgcj0iMTUiIGZpbGw9IiMyN2FlNjAiLz4KICAgICAgICAgICAgPGNpcmNsZSBjeD0iMTMwIiBjeT0iMTA1IiByPSIxNSIgZmlsbD0iIzJlY2M3MSIvPgogICAgICAgICAgICA8Y2lyY2xlIGN4PSI3NSIgY3k9IjEzNSIgcj0iMTIiIGZpbGw9IiMyN2FlNjAiLz4KICAgICAgICAgICAgPGNpcmNsZSBjeD0iMTI1IiBjeT0iMTM1IiByPSIxMiIgZmlsbD0iIzJlY2M3MSIvPgogICAgICAgICAgICA8Y2lyY2xlIGN4PSIxMDAiIGN5PSI2NSIgcj0iMjAiIGZpbGw9IiMyN2FlNjAiLz4KICAgICAgICAgICAgPHRleHQgeD0iMTAwIiB5PSIxODUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZm9udC13ZWlnaHQ9ImJvbGQiIAogICAgICAgICAgICAgICAgICBmaWxsPSIjMWEyNTJmIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5BUEVSQU0gLSBMT1VHQTwvdGV4dD4KICAgICAgICA8L3N2Zz4=" alt="Logo APERAM">
     </div>
     <div class="header-project">
-        <h2>Projet : Plantation d’alignement et Reboisement - Lot 2 (Guéoul - Louga)</h2>
+        <h2>Projet : Plantation d'alignement et Reboisement - Lot 2 (Guéoul - Louga)</h2>
         <p><strong>RAPPORT JOURNALIER DE CHANTIER</strong></p>
     </div>
 
@@ -216,7 +220,7 @@
 <div id="loading-overlay">⏳ Action en cours...</div>
 
 <script>
-    // CONFIGURATION FIREBASE (Copiez ici les clés obtenues après avoir cliqué sur "Ajouter une application")
+    // Configuration Firebase
     const firebaseConfig = {
         apiKey: "AIzaSyCDBmlqnMQCrjI2xw5KmWHOS3t5RUP8R7k",
         authDomain: "chantier-reboisement-louga.firebaseapp.com",
@@ -226,18 +230,9 @@
         appId: "1:261114224094:web:7671d2e754bf8efa68914f"
     };
 
-    // Initialisation de Firebase
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    // Initialisation d'App Check (Assurez-vous d'avoir configuré reCAPTCHA v3 dans la console Firebase)
-    try {
-        const appCheck = firebase.appCheck();
-        // Remplacez par votre clé réelle si vous l'activez
-        // appCheck.activate('VOTRE_CLE_SITE_RECAPTCHA_V3', true);
-    } catch (err) { console.warn("App Check non configuré"); }
-
-    // Gestion de l'affichage du champ "Autre" pour les équipes
     function toggleAutreEquipe(selectEl) {
         const autreInput = selectEl.parentElement.querySelector('.eq-autre');
         autreInput.style.display = (selectEl.value === 'Autre') ? 'block' : 'none';
@@ -263,19 +258,17 @@
         document.getElementById('equipes').appendChild(div);
     }
 
-    let photoBase64 = null;
-    // Fonction utilitaire pour récupérer les valeurs cochées
     const getChecked = (id) => {
         let vals = Array.from(document.querySelectorAll(`#${id} input:checked`)).map(i => i.value);
-        const other = document.getElementById(id + '_autre');
-        if (other && other.value) vals.push('Autre: ' + other.value);
-        return vals.join(', ');
+        return vals.join(', ') || 'Aucun';
     };
+
+    let photoBase64 = null;
 
     document.getElementById('form').onsubmit = function(e) {
         e.preventDefault();
         
-        const techData = Array.from(document.querySelectorAll('.tech-val')).map(i => `${i.dataset.name}: ${i.value}`).join(' | ');
+        const techData = Array.from(document.querySelectorAll('.tech-val')).map(i => `${i.dataset.name}: ${i.value || 'Non renseigné'}`).join(' | ');
         const equipes = Array.from(document.querySelectorAll('.equipe-row')).map(row => {
             const typeSelect = row.querySelector('.eq-type').value;
             return {
@@ -321,7 +314,6 @@
         rapports.push(data);
         localStorage.setItem('rapports', JSON.stringify(rapports));
         alert("Rapport enregistré !");
-        this.reset();
         checkSyncButton();
     };
 
@@ -335,7 +327,7 @@
             img.src = event.target.result;
             img.onload = function () {
                 const canvas = document.createElement('canvas');
-                const MAX_WIDTH = 600; // Réduit pour garantir la taille < 1Mo
+                const MAX_WIDTH = 600;
                 const MAX_HEIGHT = 600;
                 let width = img.width;
                 let height = img.height;
@@ -351,7 +343,6 @@
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(img, 0, 0, width, height);
 
-                // Compression en JPEG avec une qualité de 0.5 pour plus de sécurité sur la taille
                 photoBase64 = canvas.toDataURL('image/jpeg', 0.5);
                 document.getElementById('photo-preview').src = photoBase64;
                 document.getElementById('photo-preview-container').style.display = 'block';
@@ -360,7 +351,6 @@
         reader.readAsDataURL(file);
     });
 
-    // Géolocalisation
     function getGPS() {
         if ("geolocation" in navigator) {
             navigator.geolocation.getCurrentPosition(pos => {
@@ -368,9 +358,7 @@
                 document.getElementById('lon').value = pos.coords.longitude.toFixed(6);
             }, err => {
                 if (err.code === 1) {
-                    alert("Erreur GPS : Accès refusé. Veuillez autoriser la localisation dans les paramètres de votre navigateur.");
-                } else if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
-                    alert("Erreur GPS : La géolocalisation nécessite une connexion sécurisée (HTTPS).");
+                    alert("Erreur GPS : Accès refusé.");
                 } else {
                     alert("Erreur GPS : " + err.message);
                 }
@@ -380,107 +368,212 @@
         }
     }
 
-    // Fonction pour exporter en PDF
-    function exportPDF() {
-        const element = document.querySelector('.container');
-        const overlay = document.getElementById('loading-overlay');
-        const logo = document.querySelector('.logo-header img');
-        overlay.style.display = 'flex';
+    // Fonction pour collecter toutes les données du formulaire
+    function collectFormData() {
+        const equipesList = Array.from(document.querySelectorAll('.equipe-row')).map(row => {
+            const typeSelect = row.querySelector('.eq-type');
+            const typeValue = typeSelect.value === 'Autre' ? row.querySelector('.eq-autre').value : typeSelect.value;
+            return {
+                type: typeValue || 'Non spécifié',
+                nom: row.querySelector('.eq-nom').value || 'Non spécifié',
+                tel: row.querySelector('.eq-tel').value || 'Non spécifié',
+                nb: row.querySelector('.eq-nb').value || '0'
+            };
+        });
 
-        // Transformation des équipes en tableau pour le PDF
-        const equipesDiv = document.getElementById('equipes');
-        const rows = equipesDiv.querySelectorAll('.equipe-row');
-        let summaryTable = null;
+        const techActivities = Array.from(document.querySelectorAll('.tech-val')).map(input => ({
+            name: input.dataset.name,
+            value: input.value || 'Non renseigné'
+        }));
+
+        return {
+            date: document.getElementById('date').value || 'Non renseignée',
+            responsable: document.getElementById('responsable').value || 'Non renseigné',
+            localite: document.getElementById('localite').value || 'Non renseignée',
+            type_site: getChecked('type_site'),
+            comm_site: document.getElementById('comm_site').value || 'Aucun commentaire',
+            meteo: getChecked('meteo'),
+            comm_meteo: document.getElementById('comm_meteo').value || 'Aucun commentaire',
+            techActivities: techActivities,
+            equipes: equipesList,
+            comm_ressources: document.getElementById('comm_ressources').value || 'Aucun commentaire',
+            materiel: getChecked('materiel'),
+            comm_materiel: document.getElementById('comm_materiel').value || 'Aucun commentaire',
+            approvisionnement: getChecked('approvisionnement'),
+            comm_approv: document.getElementById('comm_approv').value || 'Aucun commentaire',
+            especes: document.getElementById('especes').value || 'Non renseigné',
+            comm_especes: document.getElementById('comm_especes').value || 'Aucun commentaire',
+            sante_plants: getChecked('sante_plants'),
+            comm_sante: document.getElementById('comm_sante').value || 'Aucun commentaire',
+            produits: document.getElementById('produits').value || 'Aucun produit utilisé',
+            comm_produits: document.getElementById('comm_produits').value || 'Aucun commentaire',
+            points_critiques: getChecked('points_critiques'),
+            comm_points_critiques: document.getElementById('comm_points_critiques').value || 'Aucun commentaire',
+            resultats_attendus: document.getElementById('resultats_attendus').value || 'Non renseigné',
+            lat: document.getElementById('lat').value || 'Non relevée',
+            lon: document.getElementById('lon').value || 'Non relevée',
+            commentaire: document.getElementById('commentaire').value || 'Aucun commentaire'
+        };
+    }
+
+    // Générer le contenu HTML pour l'export
+    function generateExportHTML() {
+        const data = collectFormData();
         
-        if (rows.length > 0) {
-            summaryTable = document.createElement('table');
-            summaryTable.className = 'tech-table pdf-summary';
-            summaryTable.innerHTML = `
-                <thead><tr><th>Type d'équipe</th><th>Responsable</th><th>Téléphone</th><th>Effectif</th></tr></thead>
-                <tbody></tbody>
-            `;
-            const tbody = summaryTable.querySelector('tbody');
-            rows.forEach(row => {
-                const typeSelect = row.querySelector('.eq-type').value;
-                const typeText = typeSelect === 'Autre' ? row.querySelector('.eq-autre').value : typeSelect;
-                const nom = row.querySelector('.eq-nom').value;
-                const tel = row.querySelector('.eq-tel').value;
-                const nb = row.querySelector('.eq-nb').value;
-                tbody.innerHTML += `<tr><td>${typeText}</td><td>${nom}</td><td>${tel}</td><td>${nb}</td></tr>`;
+        // Générer le tableau des équipes
+        let equipesHTML = '';
+        if (data.equipes.length > 0) {
+            equipesHTML = '<table class="tech-table" style="width:100%; border-collapse:collapse; margin-top:10px;">';
+            equipesHTML += '<thead><tr style="background:#f2f2f2;"><th style="border:1px solid #ddd; padding:8px;">Type équipe</th><th style="border:1px solid #ddd; padding:8px;">Responsable</th><th style="border:1px solid #ddd; padding:8px;">Téléphone</th><th style="border:1px solid #ddd; padding:8px;">Effectif</th></tr></thead><tbody>';
+            data.equipes.forEach(equipe => {
+                equipesHTML += `<tr><td style="border:1px solid #ddd; padding:8px;">${equipe.type}</td><td style="border:1px solid #ddd; padding:8px;">${equipe.nom}</td><td style="border:1px solid #ddd; padding:8px;">${equipe.tel}</td><td style="border:1px solid #ddd; padding:8px;">${equipe.nb}</td></tr>`;
             });
-            equipesDiv.parentNode.insertBefore(summaryTable, equipesDiv.nextSibling);
-            equipesDiv.style.display = 'none';
+            equipesHTML += '</tbody></table>';
+        } else {
+            equipesHTML = '<p>Aucune équipe renseignée</p>';
         }
 
-        // SYNCHRONISATION ROBUSTE : On remplace temporairement les inputs par des spans
-        const inputs = element.querySelectorAll('input, textarea, select');
-        const replacements = [];
-        
-        inputs.forEach(field => {
-            if (field.classList.contains('no-print')) return;
-            
-            const span = document.createElement('span');
-            span.className = 'pdf-value';
-            
-            if (field.type === 'checkbox') {
-                span.innerHTML = field.checked ? '☑ ' + field.value : '☐ ' + field.value;
-                span.style.border = 'none';
-            } else if (field.tagName === 'SELECT') {
-                span.innerText = field.options[field.selectedIndex].text;
-            } else {
-                span.innerText = field.value || 'N/A';
-            }
-            
-            field.parentNode.insertBefore(span, field);
-            field.style.display = 'none';
-            replacements.push({ field, span });
+        // Générer le tableau des activités techniques
+        let techHTML = '<table class="tech-table" style="width:100%; border-collapse:collapse;">';
+        techHTML += '<thead><tr style="background:#f2f2f2;"><th style="border:1px solid #ddd; padding:8px;">Activité</th><th style="border:1px solid #ddd; padding:8px;">Valeur</th></tr></thead><tbody>';
+        data.techActivities.forEach(activity => {
+            techHTML += `<tr><td style="border:1px solid #ddd; padding:8px;">${activity.name}</td><td style="border:1px solid #ddd; padding:8px;">${activity.value}</td></tr>`;
         });
+        techHTML += '</tbody></table>';
 
-        // On masque temporairement les éléments inutiles pour le PDF
-        const noPrint = document.querySelectorAll('.no-print');
-        noPrint.forEach(el => el.style.display = 'none');
+        return `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="UTF-8">
+                <title>Rapport Chantier - ${data.date}</title>
+                <style>
+                    body { font-family: 'Segoe UI', Arial, sans-serif; margin: 40px; color: #2c3e50; }
+                    .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #27ae60; padding-bottom: 20px; }
+                    .title { color: #1a252f; font-size: 24px; margin: 10px 0; }
+                    .subtitle { color: #27ae60; font-size: 18px; }
+                    .section { margin-bottom: 25px; page-break-inside: avoid; }
+                    .section-title { background: #1a252f; color: white; padding: 10px; border-radius: 5px; font-size: 16px; margin-bottom: 15px; }
+                    .info-row { margin-bottom: 10px; }
+                    .label { font-weight: bold; color: #1a252f; display: inline-block; min-width: 200px; }
+                    .value { margin-left: 10px; }
+                    table { width: 100%; margin-top: 10px; }
+                    th, td { padding: 8px; text-align: left; }
+                    .logo { text-align: center; margin-bottom: 20px; }
+                    .footer { margin-top: 40px; text-align: center; font-size: 12px; color: #7f8c8d; border-top: 1px solid #ddd; padding-top: 20px; }
+                </style>
+            </head>
+            <body>
+                <div class="logo">
+                    <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIwIiBoZWlnaHQ9IjEyMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CiAgICAgICAgICAgICAgICA8Y2lyY2xlIGN4PSIxMDAiIGN5PSIxMDAiIHI9Ijk1IiBmaWxsPSJub25lIiBzdHJva2U9IiMyN2FlNjAiIHN0cm9rZS13aWR0aD0iNSIvPgogICAgICAgICAgICAgICAgPHBhdGggZD0iTTEwMCAxNjAgVjYwIE0xMDAgODAgTDcwIDExMCBNMTAwIDgwIEwxMzAgMTEwIE0xMDAgMTAwIEw3NSAxMzUgTTEwMCAxMDAgTDEyNSAxMzUiIAogICAgICAgICAgICAgICAgICAgICAgc3Ryb2tlPSIjMWEyNTJmIiBzdHJva2Utd2lkdGg9IjgiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgogICAgICAgICAgICAgICAgPGNpcmNsZSBjeD0iNzAiIGN5PSIxMDUiIHI9IjE1IiBmaWxsPSIjMjdhZTYwIi8+CiAgICAgICAgICAgICAgICA8Y2lyY2xlIGN4PSIxMzAiIGN5PSIxMDUiIHI9IjE1IiBmaWxsPSIjMmVjYzcxIi8+CiAgICAgICAgICAgICAgICA8Y2lyY2xlIGN4PSI3NSIgY3k9IjEzNSIgcj0iMTIiIGZpbGw9IiMyN2FlNjAiLz4KICAgICAgICAgICAgICAgIDxjaXJjbGUgY3g9IjEyNSIgY3k9IjEzNSIgcj0iMTIiIGZpbGw9IiMyZWNjNzEiLz4KICAgICAgICAgICAgICAgIDxjaXJjbGUgY3g9IjEwMCIgY3k9IjY1IiByPSIyMCIgZmlsbD0iIzI3YWU2MCIvPgogICAgICAgICAgICAgICAgPHRleHQgeD0iMTAwIiB5PSIxODUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZm9udC13ZWlnaHQ9ImJvbGQiIAogICAgICAgICAgICAgICAgICAgICAgZmlsbD0iIzFhMjUyZiIgdGV4dC1hbmNob3I9Im1pZGRsZSI+QVBFUkFNIC0gTE9VR0E8L3RleHQ+CiAgICAgICAgICAgIDwvc3ZnPg==" style="max-height: 80px;">
+                </div>
+                <div class="header">
+                    <h1 class="title">RAPPORT JOURNALIER DE CHANTIER</h1>
+                    <p class="subtitle">Projet : Plantation d'alignement et Reboisement - Lot 2 (Guéoul - Louga)</p>
+                </div>
 
+                <div class="section">
+                    <div class="section-title">📅 GÉNÉRAL</div>
+                    <div class="info-row"><span class="label">Date :</span><span class="value">${data.date}</span></div>
+                    <div class="info-row"><span class="label">Responsable APERAM :</span><span class="value">${data.responsable}</span></div>
+                </div>
+
+                <div class="section">
+                    <div class="section-title">📍 LOCALISATION ET CONDITIONS</div>
+                    <div class="info-row"><span class="label">Localité/Commune :</span><span class="value">${data.localite}</span></div>
+                    <div class="info-row"><span class="label">Type de site :</span><span class="value">${data.type_site}</span></div>
+                    <div class="info-row"><span class="label">Commentaire site :</span><span class="value">${data.comm_site}</span></div>
+                    <div class="info-row"><span class="label">Météo :</span><span class="value">${data.meteo}</span></div>
+                    <div class="info-row"><span class="label">Commentaire météo :</span><span class="value">${data.comm_meteo}</span></div>
+                </div>
+
+                <div class="section">
+                    <div class="section-title">⚙️ SUIVI DES ACTIVITÉS TECHNIQUES</div>
+                    ${techHTML}
+                </div>
+
+                <div class="section">
+                    <div class="section-title">👥 RESSOURCES ET LOGISTIQUE</div>
+                    <div class="info-row"><span class="label">Main-d'œuvre :</span></div>
+                    ${equipesHTML}
+                    <div class="info-row"><span class="label">Commentaire main-d'œuvre :</span><span class="value">${data.comm_ressources}</span></div>
+                    <div class="info-row"><span class="label">Matériel utilisé :</span><span class="value">${data.materiel}</span></div>
+                    <div class="info-row"><span class="label">Commentaire matériel :</span><span class="value">${data.comm_materiel}</span></div>
+                    <div class="info-row"><span class="label">Approvisionnement :</span><span class="value">${data.approvisionnement}</span></div>
+                    <div class="info-row"><span class="label">Commentaire approvisionnement :</span><span class="value">${data.comm_approv}</span></div>
+                </div>
+
+                <div class="section">
+                    <div class="section-title">🌱 ÉTAT PHYTOSANITAIRE ET OBSERVATIONS</div>
+                    <div class="info-row"><span class="label">Espèces concernées :</span><span class="value">${data.especes}</span></div>
+                    <div class="info-row"><span class="label">Commentaire espèces :</span><span class="value">${data.comm_especes}</span></div>
+                    <div class="info-row"><span class="label">Santé des plants :</span><span class="value">${data.sante_plants}</span></div>
+                    <div class="info-row"><span class="label">Commentaire santé :</span><span class="value">${data.comm_sante}</span></div>
+                    <div class="info-row"><span class="label">Produits utilisés :</span><span class="value">${data.produits}</span></div>
+                    <div class="info-row"><span class="label">Commentaire produits :</span><span class="value">${data.comm_produits}</span></div>
+                    <div class="info-row"><span class="label">Points critiques :</span><span class="value">${data.points_critiques}</span></div>
+                    <div class="info-row"><span class="label">Commentaire points critiques :</span><span class="value">${data.comm_points_critiques}</span></div>
+                </div>
+
+                <div class="section">
+                    <div class="section-title">📈 RÉSULTATS ATTENDUS (INDICATEURS)</div>
+                    <div class="info-row"><span class="value">${data.resultats_attendus}</span></div>
+                </div>
+
+                <div class="section">
+                    <div class="section-title">📍 COORDONNÉES GPS</div>
+                    <div class="info-row"><span class="label">Latitude :</span><span class="value">${data.lat}</span></div>
+                    <div class="info-row"><span class="label">Longitude :</span><span class="value">${data.lon}</span></div>
+                </div>
+
+                <div class="section">
+                    <div class="section-title">📝 OBSERVATIONS GÉNÉRALES</div>
+                    <div class="info-row"><span class="value">${data.commentaire}</span></div>
+                </div>
+
+                <div class="footer">
+                    <p>Document généré le ${new Date().toLocaleString()}</p>
+                    <p>REPUBLIQUE DU SENEGAL - Un Peuple - Un But - Une Foi</p>
+                </div>
+            </body>
+            </html>
+        `;
+    }
+
+    // Export PDF
+    function exportPDF() {
+        const htmlContent = generateExportHTML();
         const opt = {
-            margin:       [0.4, 0.4],
-            filename:     `Rapport_Chantier_${document.getElementById('date').value || 'SansNom'}.pdf`,
-            image:        { type: 'jpeg', quality: 0.98 },
-            html2canvas:  { scale: 2, useCORS: true, scrollY: 0, logging: true },
-            jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' },
-            pagebreak:    { mode: ['avoid-all', 'css', 'legacy'] }
+            margin: [0.5, 0.5, 0.5, 0.5],
+            filename: `Rapport_Chantier_${document.getElementById('date').value || 'SansDate'}.pdf`,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2, useCORS: true, logging: false },
+            jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
         };
-
+        
+        const element = document.createElement('div');
+        element.innerHTML = htmlContent;
+        document.body.appendChild(element);
+        
         html2pdf().set(opt).from(element).save().then(() => {
-            // Restauration de l'interface
-            replacements.forEach(item => {
-                item.field.style.display = '';
-                item.span.remove();
-            });
-            noPrint.forEach(el => el.style.display = '');
-            if (summaryTable) {
-                summaryTable.remove();
-                equipesDiv.style.display = 'block';
-            }
-            overlay.style.display = 'none';
+            document.body.removeChild(element);
         });
     }
 
-    // Fonction pour exporter en format Word (.doc modifiable)
+    // Export Word
     function exportWord() {
-        const content = document.querySelector('.container').innerHTML;
-        const header = "<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'><head><meta charset='utf-8'><title>Rapport de Chantier</title><style>body{font-family:Arial;} table{border-collapse:collapse; width:100%;} td,th{border:1px solid black; padding:5px;}</style></head><body>";
-        const footer = "</body></html>";
-        const sourceHTML = header + content + footer;
-
-        const source = 'data:application/vnd.ms-word;charset=utf-8,' + encodeURIComponent(sourceHTML);
-        const fileDownload = document.createElement("a");
-        document.body.appendChild(fileDownload);
-        fileDownload.href = source;
-        fileDownload.download = `Rapport_Chantier_${document.getElementById('date').value || 'SansNom'}.doc`;
-        fileDownload.click();
-        document.body.removeChild(fileDownload);
+        const htmlContent = generateExportHTML();
+        const blob = new Blob([htmlContent], { type: 'application/msword' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.href = url;
+        link.download = `Rapport_Chantier_${document.getElementById('date').value || 'SansDate'}.doc`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
     }
 
-    // Visualisation des données Firebase
     async function loadRecentReports() {
         const listDiv = document.getElementById('reports-list');
         document.getElementById('hist-title').style.display = 'block';
@@ -498,7 +591,7 @@
                 div.innerHTML = `
                     <strong>📅 Date:</strong> ${r.date} | <strong>📍 Site:</strong> ${r.localite}<br>
                     <strong>👤 Responsable:</strong> ${r.responsable}<br>
-                    <strong>🛠 Activités:</strong> ${r.activite_tech.substring(0, 50)}...
+                    <strong>🛠 Activités:</strong> ${r.activite_tech ? r.activite_tech.substring(0, 50) : 'N/A'}...
                 `;
                 listDiv.appendChild(div);
             });
@@ -507,10 +600,9 @@
         }
     }
 
-    // Fonction de synchronisation vers le serveur
     async function syncReports() {
         if (!navigator.onLine) {
-            alert("Toujours hors ligne. Les données restent sur l'appareil.");
+            alert("Vous êtes hors ligne. Les données restent sur l'appareil.");
             return;
         }
 
@@ -519,22 +611,18 @@
 
         const btn = document.getElementById('btn-sync');
         btn.innerText = "⏳ Synchronisation...";
-        btn.innerText = "⏳ Envoi vers Firebase...";
         btn.disabled = true;
 
         try {
             for (let i = 0; i < rapports.length; i++) {
-                // Envoi direct à la base de données Firestore
                 await db.collection("rapports").add(rapports[i]);
             }
-            
-            // Si tout est envoyé, on vide le stockage local
             localStorage.setItem('rapports', "[]");
-            alert("Tous les rapports ont été envoyés avec succès !");
+            alert("Tous les rapports ont été synchronisés avec succès !");
         } catch (error) {
-            alert("Échec de la synchro : " + error.message);
+            alert("Échec de la synchronisation : " + error.message);
         } finally {
-            btn.innerText = "🔄 Synchroniser les données";
+            btn.innerText = "🔄 SYNCHRONISER";
             btn.disabled = false;
             checkSyncButton();
         }
@@ -545,13 +633,11 @@
         document.getElementById('btn-sync').style.display = rapports.length > 0 ? 'block' : 'none';
     }
 
-    // Vérifier au chargement s'il y a des données à synchroniser
     window.addEventListener('load', checkSyncButton);
     window.addEventListener('online', syncReports);
 
-    // Enregistrement du Service Worker pour le mode hors ligne
     if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('sw.js');
+        navigator.serviceWorker.register('sw.js').catch(err => console.log('ServiceWorker error:', err));
     }
 </script>
 
