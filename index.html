@@ -53,7 +53,19 @@
 
 <div class="container">
     <div class="logo-header">
-        <img src="./logo_des_entreprise.PNG" alt="Logo Entreprise">
+        <!-- Logo SVG intégré (Évite les erreurs 404 et s'affiche parfaitement en PDF/Word) -->
+        <svg width="120" height="120" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="100" cy="100" r="95" fill="none" stroke="#27ae60" stroke-width="5"/>
+            <path d="M100 160 V60 M100 80 L70 110 M100 80 L130 110 M100 100 L75 135 M100 100 L125 135" 
+                  stroke="#1a252f" stroke-width="8" stroke-linecap="round"/>
+            <circle cx="70" cy="105" r="15" fill="#27ae60"/>
+            <circle cx="130" cy="105" r="15" fill="#2ecc71"/>
+            <circle cx="75" cy="135" r="12" fill="#27ae60"/>
+            <circle cx="125" cy="135" r="12" fill="#2ecc71"/>
+            <circle cx="100" cy="65" r="20" fill="#27ae60"/>
+            <text x="100" y="185" font-family="Arial" font-size="14" font-weight="bold" 
+                  fill="#1a252f" text-anchor="middle">APERAM - LOUGA</text>
+        </svg>
     </div>
     <div class="header-project">
         <h2>Projet : Plantation d’alignement et Reboisement - Lot 2 (Guéoul - Louga)</h2>
@@ -191,6 +203,7 @@
 
         <button type="submit" class="no-print">💾 ENREGISTRER LE RAPPORT</button>
         <button type="button" onclick="exportPDF()" style="background-color: #e74c3c; color: white;" class="no-print">📄 EXPORTER EN PDF</button>
+        <button type="button" onclick="exportWord()" style="background-color: #2b5797; color: white;" class="no-print">📝 EXPORTER EN WORD</button>
         <button type="button" id="btn-sync" onclick="syncReports()" style="background-color: #f39c12; display: none;" class="no-print">🔄 SYNCHRONISER</button>
         <button type="button" onclick="loadRecentReports()" class="export-btn no-print" style="width:100%; border:none;">📊 VISUALISER LES DONNÉES (FIREBASE)</button>
     </form>
@@ -449,6 +462,22 @@
             }
             overlay.style.display = 'none';
         });
+    }
+
+    // Fonction pour exporter en format Word (.doc modifiable)
+    function exportWord() {
+        const content = document.querySelector('.container').innerHTML;
+        const header = "<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'><head><meta charset='utf-8'><title>Rapport de Chantier</title><style>body{font-family:Arial;} table{border-collapse:collapse; width:100%;} td,th{border:1px solid black; padding:5px;}</style></head><body>";
+        const footer = "</body></html>";
+        const sourceHTML = header + content + footer;
+
+        const source = 'data:application/vnd.ms-word;charset=utf-8,' + encodeURIComponent(sourceHTML);
+        const fileDownload = document.createElement("a");
+        document.body.appendChild(fileDownload);
+        fileDownload.href = source;
+        fileDownload.download = `Rapport_Chantier_${document.getElementById('date').value || 'SansNom'}.doc`;
+        fileDownload.click();
+        document.body.removeChild(fileDownload);
     }
 
     // Visualisation des données Firebase
