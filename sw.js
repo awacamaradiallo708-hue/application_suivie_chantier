@@ -1,4 +1,4 @@
-const CACHE_NAME = 'chantier-v5';
+const CACHE_NAME = 'chantier-v7';
 const ASSETS = [
   './',
   'index.html',
@@ -11,7 +11,16 @@ const ASSETS = [
 
 self.addEventListener('install', e => {
   e.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS))
+    caches.open(CACHE_NAME).then(async (cache) => {
+      for (const url of ASSETS) {
+        try {
+          // On utilise Request avec cache: 'reload' pour forcer la récupération fraîche
+          await cache.add(new Request(url, { cache: 'reload' }));
+        } catch (err) {
+          console.warn('ServiceWorker: Échec de mise en cache pour ' + url, err);
+        }
+      }
+    })
   );
   self.skipWaiting();
 });
