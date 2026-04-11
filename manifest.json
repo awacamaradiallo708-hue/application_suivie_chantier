@@ -11,7 +11,8 @@
       "src": "https://img.icons8.com/color/512/tree.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "maskable
+      "purpose": "maskable"
+    }
   ],
   "start_url": ".",
   "background_color": "#1a252f",

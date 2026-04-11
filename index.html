@@ -344,22 +344,38 @@
         const overlay = document.getElementById('loading-overlay');
         overlay.style.display = 'flex';
 
+        // SYNCHRONISATION : html2canvas ne voit pas les valeurs saisies dynamiquement
+        const inputs = element.querySelectorAll('input, textarea, select');
+        inputs.forEach(field => {
+            if (field.type === 'checkbox') {
+                field.checked ? field.setAttribute('checked', '') : field.removeAttribute('checked');
+            } else if (field.tagName === 'TEXTAREA') {
+                field.innerHTML = field.value; // Force le contenu pour le moteur de rendu
+            } else if (field.tagName === 'SELECT') {
+                Array.from(field.options).forEach(opt => {
+                    opt.selected ? opt.setAttribute('selected', 'selected') : opt.removeAttribute('selected');
+                });
+            } else {
+                field.setAttribute('value', field.value);
+            }
+        });
+
         // On masque temporairement les éléments inutiles pour le PDF
         const noPrint = document.querySelectorAll('.no-print');
         noPrint.forEach(el => el.style.display = 'none');
 
         const opt = {
-            margin:       0.2,
+            margin:       [0.5, 0.3], // Marges haut/bas, gauche/droite
             filename:     `Rapport_Chantier_${document.getElementById('date').value || 'SansNom'}.pdf`,
             image:        { type: 'jpeg', quality: 0.98 },
-            html2canvas:  { scale: 2, useCORS: true },
-            jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
+            html2canvas:  { scale: 2, useCORS: true, scrollY: 0, letterRendering: true },
+            jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' },
+            pagebreak:    { mode: ['avoid-all', 'css', 'legacy'] }
         };
 
         html2pdf().set(opt).from(element).save().then(() => {
             noPrint.forEach(el => el.style.display = '');
             overlay.style.display = 'none';
-            checkSyncButton();
         });
     }
 
