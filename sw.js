@@ -1,4 +1,4 @@
-const CACHE_NAME = 'chantier-v10';
+const CACHE_NAME = 'chantier-v11';
 const ASSETS = [
   './',
   'index.html',
@@ -12,29 +12,24 @@ const ASSETS = [
 
 self.addEventListener('install', e => {
   e.waitUntil(
-    caches.open(CACHE_NAME).then(async cache => {
-      // Tente de mettre en cache chaque ressource individuellement
-      // pour éviter qu'une seule erreur ne fasse échouer toute l'installation.
-      // Gère les ressources locales et externes différemment.
-      for (let url of ASSETS) {
-        // Pour les ressources externes, on essaie un fetch sans CORS pour la mise en cache
-        // Cela peut aider à contourner certains blocages de Tracking Prevention,
-        // mais la ressource ne sera pas "opaque" et ne pourra pas être inspectée.
-        // Pour les ressources locales, on utilise cache.add pour un contrôle plus strict.
+    caches.open(CACHE_NAME).then(async (cache) => {
+      for (const url of ASSETS) {
         try {
-          if (url.startsWith('http')) {
-            const response = await fetch(url, { mode: 'no-cors' });
-            if (response.ok || response.type === 'opaque') { // Vérifie si la réponse est OK ou opaque
-              await cache.put(url, response);
-            } else {
-              console.warn(`ServiceWorker: Échec de récupération pour ${url} (statut: ${response.status})`);
-            }
+          const request = new Request(url, {
+            // On n'utilise plus no-cors pour les scripts afin d'éviter les réponses opaques
+            // qui cassent le chargement des scripts avec l'attribut crossorigin
+            mode: url.startsWith('http') ? 'cors' : 'same-origin',
+            cache: 'reload'
+          });
+          
+          const response = await fetch(request);
+          if (response.ok) {
+            await cache.put(url, response);
           } else {
-            // Pour les ressources locales, on utilise add pour un contrôle plus strict
-            await cache.add(new Request(url, { cache: 'reload' }));
+            console.warn(`ServiceWorker: Ressource ignorée (Statut ${response.status}): ${url}`);
           }
         } catch (err) {
-          console.warn('ServiceWorker: Échec de mise en cache pour ' + url, err);
+          console.warn(`ServiceWorker: Erreur réseau pour ${url}:`, err);
         }
       }
     })
