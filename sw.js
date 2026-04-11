@@ -1,8 +1,9 @@
-const CACHE_NAME = 'chantier-v7';
+const CACHE_NAME = 'chantier-v8';
 const ASSETS = [
   './',
   'index.html',
   'manifest.json',
+  'logo.png',
   'https://img.icons8.com/color/192/tree.png',
   'https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js',
   'https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js',
