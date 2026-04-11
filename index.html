@@ -36,6 +36,9 @@
         .tech-table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
         .tech-table th, .tech-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
         .tech-table th { background: #f2f2f2; font-size: 0.8rem; }
+        /* Styles pour rendre le tableau des équipes plus compact dans le PDF */
+        .pdf-summary { font-size: 0.75rem; width: 100%; margin-top: 5px; }
+        .pdf-summary th, .pdf-summary td { padding: 3px 5px !important; border: 1px solid #ccc; }
         .export-btn { background-color: #f39c12; color: white; text-decoration: none; display: block; text-align: center; padding: 15px; border-radius: 8px; margin-top: 10px; font-weight: bold; }
         .report-card { background: white; border-left: 5px solid var(--accent); padding: 15px; margin-top: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
         .btn-view { background: var(--accent); color: white; border: none; padding: 8px; border-radius: 4px; cursor: pointer; width: auto; font-size: 0.8rem; }
@@ -114,7 +117,7 @@
             <h3>👥 3. RESSOURCES ET LOGISTIQUE</h3>
             <label>3.1. Main-d'œuvre</label>
             <div id="equipes"></div>
-            <button type="button" class="btn-add" onclick="addEquipe()">+ Ajouter personnel/équipe</button>
+            <button type="button" class="btn-add no-print" onclick="addEquipe()">+ Ajouter personnel/équipe</button>
             <textarea id="comm_ressources" class="comm-field" placeholder="Commentaire succinct main-d'œuvre..."></textarea>
             
             <label>3.2. Matériel utilisé</label>
@@ -171,7 +174,7 @@
 
         <section>
             <h3>📸 Photo & GPS</h3>
-            <button type="button" onclick="getGPS()">📍 Relever Position GPS</button>
+            <button type="button" onclick="getGPS()" class="no-print">📍 Relever Position GPS</button>
             <div style="display:flex; gap:10px; margin-top:5px">
                 <input type="text" id="lat" placeholder="Lat" readonly>
                 <input type="text" id="lon" placeholder="Lon" readonly>
@@ -239,7 +242,7 @@
             <input type="text" placeholder="Nom responsable" class="eq-nom">
             <input type="text" placeholder="Téléphone" class="eq-tel">
             <input type="number" placeholder="Effectif" class="eq-nb">
-            <button type="button" style="background:#dc3545; color:white; padding: 5px 10px;" onclick="this.parentElement.remove()">✕</button>
+            <button type="button" class="no-print" style="background:#dc3545; color:white; padding: 5px 10px;" onclick="this.parentElement.remove()">✕</button>
         `;
         document.getElementById('equipes').appendChild(div);
     }
@@ -367,6 +370,31 @@
         const overlay = document.getElementById('loading-overlay');
         overlay.style.display = 'flex';
 
+        // Transformation des équipes en tableau pour le PDF
+        const equipesDiv = document.getElementById('equipes');
+        const rows = equipesDiv.querySelectorAll('.equipe-row');
+        let summaryTable = null;
+        
+        if (rows.length > 0) {
+            summaryTable = document.createElement('table');
+            summaryTable.className = 'tech-table pdf-summary';
+            summaryTable.innerHTML = `
+                <thead><tr><th>Type d'équipe</th><th>Responsable</th><th>Téléphone</th><th>Effectif</th></tr></thead>
+                <tbody></tbody>
+            `;
+            const tbody = summaryTable.querySelector('tbody');
+            rows.forEach(row => {
+                const typeSelect = row.querySelector('.eq-type').value;
+                const typeText = typeSelect === 'Autre' ? row.querySelector('.eq-autre').value : typeSelect;
+                const nom = row.querySelector('.eq-nom').value;
+                const tel = row.querySelector('.eq-tel').value;
+                const nb = row.querySelector('.eq-nb').value;
+                tbody.innerHTML += `<tr><td>${typeText}</td><td>${nom}</td><td>${tel}</td><td>${nb}</td></tr>`;
+            });
+            equipesDiv.parentNode.insertBefore(summaryTable, equipesDiv.nextSibling);
+            equipesDiv.style.display = 'none';
+        }
+
         // SYNCHRONISATION : html2canvas ne voit pas les valeurs saisies dynamiquement
         const inputs = element.querySelectorAll('input, textarea, select');
         inputs.forEach(field => {
@@ -398,6 +426,10 @@
 
         html2pdf().set(opt).from(element).save().then(() => {
             noPrint.forEach(el => el.style.display = '');
+            if (summaryTable) {
+                summaryTable.remove();
+                equipesDiv.style.display = 'block';
+            }
             overlay.style.display = 'none';
         });
     }
