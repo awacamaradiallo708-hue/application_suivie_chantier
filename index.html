@@ -25,8 +25,11 @@
         button { width: 100%; padding: 15px; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: background 0.3s; margin-top: 10px; }
         button[type="submit"] { background-color: var(--secondary); color: white; }
         .btn-add { background-color: var(--accent); color: white; width: auto; padding: 10px 20px; }
-        .equipe-row { background: #f1f1f1; padding: 10px; border-radius: 8px; margin-bottom: 10px; display: grid; grid-template-columns: 1.5fr 1fr 1fr 0.5fr auto; gap: 5px; align-items: center; }
-        .equipe-row input { margin: 0; padding: 8px; }
+        .equipe-block { background: #f8f9fa; border: 1px solid #dee2e6; padding: 15px; border-radius: 10px; margin-bottom: 15px; position: relative; }
+        .worker-row { display: flex; gap: 10px; margin-bottom: 5px; align-items: center; background: white; padding: 5px; border-radius: 5px; border: 1px solid #eee; }
+        .worker-row input { margin-bottom: 0; padding: 8px; font-size: 14px; }
+        .btn-remove { background: #e74c3c; color: white; padding: 5px 10px; width: auto; margin: 0; }
+        .effectif-badge { display: inline-block; background: var(--secondary); color: white; padding: 2px 8px; border-radius: 10px; font-size: 0.8rem; margin-top: 5px; }
         .tech-table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
         .tech-table th, .tech-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
         .tech-table th { background: #f2f2f2; font-size: 0.8rem; }
@@ -285,7 +288,7 @@
             comm_site: document.getElementById('comm_site').value,
             meteo: getChecked('meteo'),
             comm_meteo: document.getElementById('comm_meteo').value,
-            activite_tech: techData,
+            activite_tech: Array.from(document.querySelectorAll('.tech-val')).map(i => `${i.dataset.name}: ${i.value || 'N/A'}`).join(' | '),
             equipes: equipes,
             comm_ressources: document.getElementById('comm_ressources').value,
             materiel: getChecked('materiel'),
@@ -386,14 +389,15 @@
 
     // Fonction pour collecter toutes les données du formulaire
     function collectFormData() {
-        const equipesList = Array.from(document.querySelectorAll('.equipe-row')).map(row => {
-            const typeSelect = row.querySelector('.eq-type');
-            const typeValue = typeSelect.value === 'Autre' ? row.querySelector('.eq-autre').value : typeSelect.value;
+        const equipesList = Array.from(document.querySelectorAll('.equipe-block')).map(block => {
+            const workers = Array.from(block.querySelectorAll('.worker-row')).map(row => ({
+                nom: row.querySelector('.w-nom').value || 'N/A',
+                tel: row.querySelector('.w-tel').value || 'N/A'
+            }));
             return {
-                type: typeValue || 'Non spécifié',
-                nom: row.querySelector('.eq-nom').value || 'Non spécifié',
-                tel: row.querySelector('.eq-tel').value || 'Non spécifié',
-                nb: row.querySelector('.eq-nb').value || '0'
+                type: block.querySelector('.eq-type').value,
+                ouvriers: workers,
+                effectif: workers.length
             };
         });
 
@@ -436,16 +440,25 @@
     // Générer le contenu HTML pour l'export
     function generateExportHTML() {
         const data = collectFormData();
-        
-        // Générer le tableau des équipes
-        let equipesHTML = '';
+
+        let equipesHTML = '<div style="margin-top: 10px;">';
         if (data.equipes.length > 0) {
-            equipesHTML = '<table class="tech-table" style="width:100%; border-collapse:collapse; margin-top:10px;">';
-            equipesHTML += '<thead><tr style="background:#f2f2f2;"><th style="border:1px solid #ddd; padding:8px;">Type équipe</th><th style="border:1px solid #ddd; padding:8px;">Responsable</th><th style="border:1px solid #ddd; padding:8px;">Téléphone</th><th style="border:1px solid #ddd; padding:8px;">Effectif</th></tr></thead><tbody>';
-            data.equipes.forEach(equipe => {
-                equipesHTML += `<tr><td style="border:1px solid #ddd; padding:8px;">${equipe.type}</td><td style="border:1px solid #ddd; padding:8px;">${equipe.nom}</td><td style="border:1px solid #ddd; padding:8px;">${equipe.tel}</td><td style="border:1px solid #ddd; padding:8px;">${equipe.nb}</td></tr>`;
+            data.equipes.forEach((eq, index) => {
+                equipesHTML += `
+                    <div style="background: #f9f9f9; padding: 10px; border: 1px solid #ccc; margin-bottom: 10px; border-radius: 5px;">
+                        <h4 style="margin-top:0; color:#1a252f;">Équipe ${index + 1} : ${eq.type} (Effectif: ${eq.effectif})</h4>
+                        <table style="width:100%; border-collapse: collapse; font-size: 12px;">
+                            <tr style="background:#eee;">
+                                <th style="border:1px solid #ddd; padding:5px;">Nom de l'ouvrier</th>
+                                <th style="border:1px solid #ddd; padding:5px;">Téléphone</th>
+                            </tr>
+                            ${eq.ouvriers.map(o => `
+                                <tr><td style="border:1px solid #ddd; padding:5px;">${o.nom}</td><td style="border:1px solid #ddd; padding:5px;">${o.tel}</td></tr>
+                            `).join('')}
+                        </table>
+                    </div>`;
             });
-            equipesHTML += '</tbody></table>';
+            equipesHTML += '</div>';
         } else {
             equipesHTML = '<p>Aucune équipe renseignée</p>';
         }

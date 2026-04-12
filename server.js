@@ -42,7 +42,7 @@ app.post('/api/rapports', (req, res) => {
     tech_protections: data.tech_protections,
 
     // 3. RESSOURCES ET LOGISTIQUE
-    ressources_main_doeuvre: data.ressources_main_doeuvre,
+    equipes: data.equipes, // Structure imbriquée : { type, ouvriers: [{nom, tel}], effectif }
     ressources_main_doeuvre_comm: data.ressources_main_doeuvre_comm,
     ressources_materiel: data.ressources_materiel,
     ressources_materiel_comm: data.ressources_materiel_comm,
