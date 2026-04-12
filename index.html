@@ -6,6 +6,7 @@
     <title>Suivi de Chantier</title>
     <link rel="manifest" href="manifest.json">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" crossorigin="anonymous"></script>
     <style>
         :root { --primary: #1a252f; --secondary: #27ae60; --accent: #2980b9; --bg-sec: #f8f9fa; }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #ecf0f1; margin: 0; padding: 15px; color: #2c3e50; line-height: 1.6; }
@@ -68,21 +69,6 @@
 <body>
 
 <div class="container" id="report-container">
-    <div class="logo-header">
-        <!-- Logo SVG intégré pour éviter les erreurs 404 sur GitHub et garantir l'affichage PDF/Word -->
-        <svg width="120" height="120" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="100" cy="100" r="95" fill="none" stroke="#27ae60" stroke-width="5"/>
-            <path d="M100 160 V60 M100 80 L70 110 M100 80 L130 110 M100 100 L75 135 M100 100 L125 135" 
-                  stroke="#1a252f" stroke-width="8" stroke-linecap="round"/>
-            <circle cx="70" cy="105" r="15" fill="#27ae60"/>
-            <circle cx="130" cy="105" r="15" fill="#2ecc71"/>
-            <circle cx="75" cy="135" r="12" fill="#27ae60"/>
-            <circle cx="125" cy="135" r="12" fill="#2ecc71"/>
-            <circle cx="100" cy="65" r="20" fill="#27ae60"/>
-            <text x="100" y="185" font-family="Arial" font-size="14" font-weight="bold" 
-                  fill="#1a252f" text-anchor="middle">APERAM - LOUGA</text>
-        </svg>
-    </div>
     <div class="header-project">
         <h2>Projet : Plantation d'alignement et Reboisement - Lot 2 (Guéoul - Louga)</h2>
         <p><strong>RAPPORT JOURNALIER DE CHANTIER</strong></p>
@@ -90,7 +76,7 @@
 
     <form id="form">
         <section>
-            <h3>📅 Général</h3>
+            <h3>Général</h3>
             <label>Date</label>
             <input type="date" id="date" required>
             <label>Responsable APERAM</label>
@@ -98,7 +84,7 @@
         </section>
 
         <section>
-            <h3>📍 1. LOCALISATION ET CONDITIONS</h3>
+            <h3> 1. LOCALISATION ET CONDITIONS</h3>
             <label>1.1. Localité/Commune (Région de Louga)</label>
             <select id="localite">
                 <option value="">-- Choisir une commune --</option>
@@ -132,7 +118,7 @@
         </section>
 
         <section>
-            <h3>⚙️ 2. SUIVI DES ACTIVITÉS TECHNIQUES</h3>
+            <h3>2. SUIVI DES ACTIVITÉS TECHNIQUES</h3>
             <table class="tech-table">
                 <thead><tr><th>Activité</th><th>Quantité / Statut</th></tr></thead>
                 <tbody>
@@ -145,7 +131,7 @@
         </section>
 
         <section>
-            <h3>👥 3. RESSOURCES ET LOGISTIQUE</h3>
+            <h3> 3. RESSOURCES ET LOGISTIQUE</h3>
             <label>3.1. Main-d'œuvre</label>
             <div id="equipes"></div>
             <button type="button" class="btn-add no-print" onclick="addEquipe()">+ Ajouter personnel/équipe</button>
@@ -169,7 +155,7 @@
         </section>
 
         <section>
-            <h3>🌱 4. ÉTAT PHYTOSANITAIRE ET OBSERVATIONS</h3>
+            <h3> 4. ÉTAT PHYTOSANITAIRE ET OBSERVATIONS</h3>
             <label>4.1. Espèces concernées ce jour</label>
             <input type="text" id="especes" placeholder="ex: Acacia senegal, Prosopis...">
             <textarea id="comm_especes" class="comm-field" placeholder="Commentaire succinct espèces..."></textarea>
@@ -198,14 +184,14 @@
         </section>
 
         <section>
-            <h3>📈 5. RÉSULTATS ATTENDUS (INDICATEURS)</h3>
+            <h3>5. RÉSULTATS ATTENDUS (INDICATEURS)</h3>
             <p style="font-size: 0.8rem; color: #666; margin-bottom: 10px;">A renseigner chaque semaine et chaque mois (Taux de survie, stabilisation talus...)</p>
             <textarea id="resultats_attendus" style="height: 100px;" placeholder="Évaluation du taux de survie, structure du talus..."></textarea>
         </section>
 
         <section>
-            <h3>📸 Photo & GPS</h3>
-            <button type="button" onclick="getGPS()" class="no-print">📍 Relever Position GPS</button>
+            <h3>Photo & GPS</h3>
+            <button type="button" onclick="getGPS()" class="no-print">Relever Position GPS</button>
             <div style="display:flex; gap:10px; margin-top:5px">
                 <input type="text" id="lat" placeholder="Lat" readonly>
                 <input type="text" id="lon" placeholder="Lon" readonly>
@@ -217,10 +203,9 @@
         <label>Observations Générales Finales</label>
         <textarea id="commentaire" placeholder="Notes additionnelles..."></textarea>
 
-        <button type="submit" class="no-print">💾 ENREGISTRER LE RAPPORT</button>
-        <button type="button" onclick="exportWord()" style="background-color: #2b5797; color: white;" class="no-print">📝 EXPORTER EN WORD</button>
+        <button type="submit" class="no-print"> ENREGISTRER LE RAPPORT</button>
+        <button type="button" onclick="exportWord()" style="background-color: #2b5797; color: white;" class="no-print"> EXPORTER EN WORD</button>
         <button type="button" id="btn-sync" onclick="syncReports()" style="background-color: #f39c12; display: none;" class="no-print">🔄 SYNCHRONISER</button>
-        <button type="button" onclick="loadRecentReports()" class="export-btn no-print" style="width:100%; border:none;">📊 VISUALISER LES DONNÉES (POSTGRESQL)</button>
     </form>
 
     <div id="firebase-data" style="margin-top: 40px;" class="no-print">
@@ -231,8 +216,6 @@
 <div id="loading-overlay">⏳ Action en cours...</div>
 
 <script>
-    // URL de votre API Backend connectée à PostgreSQL (En local pour les tests)
-    const API_POSTGRES_URL = "http://localhost:3000/api/rapports";
 
     function addEquipe() {
         const div = document.createElement('div');
@@ -260,8 +243,9 @@
         const row = document.createElement('div');
         row.className = 'worker-row';
         row.innerHTML = `
-            <input type="text" placeholder="Nom de l'ouvrier" class="w-nom" style="flex: 2;">
+            <input type="text" placeholder="Nom" class="w-nom" style="flex: 1.5;">
             <input type="tel" placeholder="Téléphone" class="w-tel" style="flex: 1;">
+            <input type="text" placeholder="Adresse" class="w-adr" style="flex: 1.5;">
             <button type="button" class="btn-remove" onclick="removeOuvrier(this)">✕</button>
         `;
         container.appendChild(row);
@@ -292,7 +276,8 @@
         const equipes = Array.from(document.querySelectorAll('.equipe-block')).map(block => {
             const workers = Array.from(block.querySelectorAll('.worker-row')).map(row => ({
                 nom: row.querySelector('.w-nom').value,
-                tel: row.querySelector('.w-tel').value
+                tel: row.querySelector('.w-tel').value,
+                adresse: row.querySelector('.w-adr').value
             }));
             return {
                 type: block.querySelector('.eq-type').value,
@@ -413,7 +398,8 @@
         const equipesList = Array.from(document.querySelectorAll('.equipe-block')).map(block => {
             const workers = Array.from(block.querySelectorAll('.worker-row')).map(row => ({
                 nom: row.querySelector('.w-nom').value || 'N/A',
-                tel: row.querySelector('.w-tel').value || 'N/A'
+                tel: row.querySelector('.w-tel').value || 'N/A',
+                adresse: row.querySelector('.w-adr').value || 'N/A'
             }));
             return {
                 type: block.querySelector('.eq-type').value,
@@ -467,14 +453,15 @@
             data.equipes.forEach((eq, index) => {
                 equipesHTML += `
                     <div style="background: #f9f9f9; padding: 10px; border: 1px solid #ccc; margin-bottom: 10px; border-radius: 5px;">
-                        <h4 style="margin-top:0; color:#1a252f;">Équipe ${index + 1} : ${eq.type} (Effectif: ${eq.effectif})</h4>
+                        <h4 style="margin-top:0; color:#1a252f;">Équipe ${index + 1} : ${eq.type} (Effectif : ${eq.effectif})</h4>
                         <table style="width:100%; border-collapse: collapse; font-size: 12px;">
                             <tr style="background:#eee;">
                                 <th style="border:1px solid #ddd; padding:5px;">Nom de l'ouvrier</th>
                                 <th style="border:1px solid #ddd; padding:5px;">Téléphone</th>
+                                <th style="border:1px solid #ddd; padding:5px;">Adresse</th>
                             </tr>
                             ${eq.ouvriers.map(o => `
-                                <tr><td style="border:1px solid #ddd; padding:5px;">${o.nom}</td><td style="border:1px solid #ddd; padding:5px;">${o.tel}</td></tr>
+                                <tr><td style="border:1px solid #ddd; padding:5px;">${o.nom}</td><td style="border:1px solid #ddd; padding:5px;">${o.tel}</td><td style="border:1px solid #ddd; padding:5px;">${o.adresse}</td></tr>
                             `).join('')}
                         </table>
                     </div>`;
@@ -521,9 +508,6 @@
                 </style>
             </head>
             <body>
-                <div class="logo">
-                    <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIwIiBoZWlnaHQ9IjEyMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CiAgICAgICAgICAgICAgICA8Y2lyY2xlIGN4PSIxMDAiIGN5PSIxMDAiIHI9Ijk1IiBmaWxsPSJub25lIiBzdHJva2U9IiMyN2FlNjAiIHN0cm9rZS13aWR0aD0iNSIvPgogICAgICAgICAgICAgICAgPHBhdGggZD0iTTEwMCAxNjAgVjYwIE0xMDAgODAgTDcwIDExMCBNMTAwIDgwIEwxMzAgMTEwIE0xMDAgMTAwIEw3NSAxMzUgTTEwMCAxMDAgTDEyNSAxMzUiIAogICAgICAgICAgICAgICAgICAgICAgc3Ryb2tlPSIjMWEyNTJmIiBzdHJva2Utd2lkdGg9IjgiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgogICAgICAgICAgICAgICAgPGNpcmNsZSBjeD0iNzAiIGN5PSIxMDUiIHI9IjE1IiBmaWxsPSIjMjdhZTYwIi8+CiAgICAgICAgICAgICAgICA8Y2lyY2xlIGN4PSIxMzAiIGN5PSIxMDUiIHI9IjE1IiBmaWxsPSIjMmVjYzcxIi8+CiAgICAgICAgICAgICAgICA8Y2lyY2xlIGN4PSI3NSIgY3k9IjEzNSIgcj0iMTIiIGZpbGw9IiMyN2FlNjAiLz4KICAgICAgICAgICAgICAgIDxjaXJjbGUgY3g9IjEyNSIgY3k9IjEzNSIgcj0iMTIiIGZpbGw9IiMyZWNjNzEiLz4KICAgICAgICAgICAgICAgIDxjaXJjbGUgY3g9IjEwMCIgY3k9IjY1IiByPSIyMCIgZmlsbD0iIzI3YWU2MCIvPgogICAgICAgICAgICAgICAgPHRleHQgeD0iMTAwIiB5PSIxODUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZm9udC13ZWlnaHQ9ImJvbGQiIAogICAgICAgICAgICAgICAgICAgICAgZmlsbD0iIzFhMjUyZiIgdGV4dC1hbmNob3I9Im1pZGRsZSI+QVBFUkFNIC0gTE9VR0E8L3RleHQ+CiAgICAgICAgICAgIDwvc3ZnPg==" style="max-height: 80px;">
-                </div>
                 <div class="header">
                     <h1 class="title">RAPPORT JOURNALIER DE CHANTIER</h1>
                     <p class="subtitle">Projet : Plantation d'alignement et Reboisement - Lot 2 (Guéoul - Louga)</p>
@@ -631,6 +615,35 @@
         link.click();
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
+    }
+
+    // Export Excel des informations du personnel
+    function exportExcel() {
+        const data = collectFormData();
+        let rows = [];
+        let globalEffectif = 0;
+        data.equipes.forEach(eq => globalEffectif += eq.effectif);
+
+        data.equipes.forEach(eq => {
+            eq.ouvriers.forEach(o => {
+                rows.push({
+                    "Date": data.date,
+                    "Responsable": data.responsable,
+                    "Localité": data.localite,
+                    "Type d'Équipe": eq.type,
+                    "Nom de l'Ouvrier": o.nom,
+                    "Téléphone": o.tel,
+                    "Adresse": o.adresse,
+                    "Effectif de l'Équipe": eq.effectif,
+                    "Effectif Global Chantier": globalEffectif
+                });
+            });
+        });
+
+        const worksheet = XLSX.utils.json_to_sheet(rows);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Rapport Personnel");
+        XLSX.writeFile(workbook, `Pointage_Chantier_${data.date}.xlsx`);
     }
 
     async function loadRecentReports() {
