@@ -8,7 +8,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" crossorigin="anonymous"></script>
     <style>
-        :root { --primary: #1a252f; --secondary: #27ae60; --accent: #2980b9; --bg-sec: #f8f9fa; }
+        :root { --primary: #2980b9; --secondary: #1e1364; --accent: #2980b9; --bg-sec: #f8f9fa; }
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #ecf0f1; margin: 0; padding: 15px; color: #2c3e50; line-height: 1.6; }
         .container { max-width: 800px; margin: auto; background: white; padding: 25px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
         .logo-header { text-align: center; margin-bottom: 15px; }
@@ -36,19 +36,19 @@
         .tech-table th { background: #f2f2f2; font-size: 0.8rem; }
         .pdf-summary { font-size: 0.75rem; width: 100%; margin-top: 5px; }
         .pdf-summary th, .pdf-summary td { padding: 3px 5px !important; border: 1px solid #ccc; }
-        .pdf-value { font-weight: bold; color: #2c3e50; border-bottom: 1px solid #bdc3c7; display: inline-block; min-width: 50px; }
+        .pdf-value { font-weight: bold; color: #2980b9; border-bottom: 1px solid #bdc3c7; display: inline-block; min-width: 50px; }
         .tech-table input { border: none; background: transparent; width: 100%; }
         .export-btn { background-color: #f39c12; color: white; text-decoration: none; display: block; text-align: center; padding: 15px; border-radius: 8px; margin-top: 10px; font-weight: bold; }
-        .report-card { background: white; border-left: 5px solid var(--accent); padding: 15px; margin-top: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .report-card { background: white; border-left: 5px solid var(--accent); padding: 15px; margin-top: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(7, 77, 230, 0.5); }
         .btn-view { background: var(--accent); color: white; border: none; padding: 8px; border-radius: 4px; cursor: pointer; width: auto; font-size: 0.8rem; }
-        #loading-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); color: white; justify-content: center; align-items: center; z-index: 1000; }
+        #loading-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(7, 77, 230, 0.5); color: white; justify-content: center; align-items: center; z-index: 1000; }
         @media print { .no-print { display: none !important; } }
         
         /* Styles pour l'export PDF/Word */
         .export-content .form-input-value {
             font-weight: normal;
             margin-left: 10px;
-            color: #2c3e50;
+            color: #2980b9;
         }
         .export-section {
             margin-bottom: 20px;
@@ -205,7 +205,7 @@
 
         <button type="submit" class="no-print"> ENREGISTRER LE RAPPORT</button>
         <button type="button" onclick="exportWord()" style="background-color: #2b5797; color: white;" class="no-print"> EXPORTER EN WORD</button>
-        <button type="button" id="btn-sync" onclick="syncReports()" style="background-color: #f39c12; display: none;" class="no-print">🔄 SYNCHRONISER</button>
+        <button type="button" onclick="exportExcel()" style="background-color: #27ae60; color: white;" class="no-print"> EXPORTER EN EXCEL</button>
     </form>
 
     <div id="firebase-data" style="margin-top: 40px;" class="no-print">
@@ -324,7 +324,6 @@
         
         // Envoi vers PostgreSQL via l'API
         sendToPostgres(data);
-        checkSyncButton();
     };
 
     async function sendToPostgres(data) {
@@ -482,7 +481,7 @@
         // Image pour le rapport
         let photoHTML = '';
         if (data.photo) {
-            photoHTML = `<div class="section"><div class="section-title">📸 PHOTO DU CHANTIER</div><img src="${data.photo}" style="max-width:100%; border:1px solid #ddd;"></div>`;
+            photoHTML = `<div class="section"><div class="section-title"> PHOTO DU CHANTIER</div><img src="${data.photo}" style="max-width:100%; border:1px solid #ddd;"></div>`;
         }
 
         return `
@@ -514,13 +513,13 @@
                 </div>
 
                 <div class="section">
-                    <div class="section-title">📅 GÉNÉRAL</div>
+                    <div class="section-title"> GÉNÉRAL</div>
                     <div class="info-row"><span class="label">Date :</span><span class="value">${data.date}</span></div>
                     <div class="info-row"><span class="label">Responsable APERAM :</span><span class="value">${data.responsable}</span></div>
                 </div>
 
                 <div class="section">
-                    <div class="section-title">📍 LOCALISATION ET CONDITIONS</div>
+                    <div class="section-title">LOCALISATION ET CONDITIONS</div>
                     <div class="info-row"><span class="label">Localité/Commune :</span><span class="value">${data.localite}</span></div>
                     <div class="info-row"><span class="label">Type de site :</span><span class="value">${data.type_site}</span></div>
                     <div class="info-row"><span class="label">Commentaire site :</span><span class="value">${data.comm_site}</span></div>
@@ -529,12 +528,12 @@
                 </div>
 
                 <div class="section">
-                    <div class="section-title">⚙️ SUIVI DES ACTIVITÉS TECHNIQUES</div>
+                    <div class="section-title">SUIVI DES ACTIVITÉS TECHNIQUES</div>
                     ${techHTML}
                 </div>
 
                 <div class="section">
-                    <div class="section-title">👥 RESSOURCES ET LOGISTIQUE</div>
+                    <div class="section-title">RESSOURCES ET LOGISTIQUE</div>
                     <div class="info-row"><span class="label">Main-d'œuvre :</span></div>
                     ${equipesHTML}
                     <div class="info-row"><span class="label">Commentaire main-d'œuvre :</span><span class="value">${data.comm_ressources}</span></div>
@@ -545,7 +544,7 @@
                 </div>
 
                 <div class="section">
-                    <div class="section-title">🌱 ÉTAT PHYTOSANITAIRE ET OBSERVATIONS</div>
+                    <div class="section-title">ÉTAT PHYTOSANITAIRE ET OBSERVATIONS</div>
                     <div class="info-row"><span class="label">Espèces concernées :</span><span class="value">${data.especes}</span></div>
                     <div class="info-row"><span class="label">Commentaire espèces :</span><span class="value">${data.comm_especes}</span></div>
                     <div class="info-row"><span class="label">Santé des plants :</span><span class="value">${data.sante_plants}</span></div>
@@ -557,12 +556,12 @@
                 </div>
 
                 <div class="section">
-                    <div class="section-title">📈 RÉSULTATS ATTENDUS (INDICATEURS)</div>
+                    <div class="section-title">RÉSULTATS ATTENDUS (INDICATEURS)</div>
                     <div class="info-row"><span class="value">${data.resultats_attendus}</span></div>
                 </div>
 
                 <div class="section">
-                    <div class="section-title">📍 COORDONNÉES GPS</div>
+                    <div class="section-title">COORDONNÉES GPS</div>
                     <div class="info-row"><span class="label">Latitude :</span><span class="value">${data.lat}</span></div>
                     <div class="info-row"><span class="label">Longitude :</span><span class="value">${data.lon}</span></div>
                 </div>
@@ -570,7 +569,7 @@
                 ${photoHTML}
 
                 <div class="section">
-                    <div class="section-title">📝 OBSERVATIONS GÉNÉRALES</div>
+                    <div class="section-title">OBSERVATIONS GÉNÉRALES</div>
                     <div class="info-row"><span class="value">${data.commentaire}</span></div>
                 </div>
 
@@ -663,9 +662,9 @@
                 const div = document.createElement('div');
                 div.className = 'report-card';
                 div.innerHTML = `
-                    <strong>📅 Date:</strong> ${r.date_rapport} | <strong>📍 Site:</strong> ${r.localite}<br>
-                    <strong>👤 Responsable:</strong> ${r.responsable}<br>
-                    <strong>🛠 Activités:</strong> ${r.activite_tech ? r.activite_tech.substring(0, 45) : 'N/A'}...
+                    <strong>Date:</strong> ${r.date_rapport} | <strong>Site:</strong> ${r.localite}<br>
+                    <strong>Responsable:</strong> ${r.responsable}<br>
+                    <strong>Activités:</strong> ${r.activite_tech ? r.activite_tech.substring(0, 45) : 'N/A'}...
                 `;
                 listDiv.appendChild(div);
             });
@@ -673,42 +672,6 @@
             listDiv.innerHTML = "Erreur : " + error.message;
         }
     }
-
-    async function syncReports() {
-        if (!navigator.onLine) {
-            alert("Vous êtes hors ligne. Les données restent sur l'appareil.");
-            return;
-        }
-
-        let rapports = JSON.parse(localStorage.getItem('rapports') || "[]");
-        if (rapports.length === 0) return;
-
-        const btn = document.getElementById('btn-sync');
-        btn.innerText = "⏳ Synchronisation...";
-        btn.disabled = true;
-
-        try {
-            for (let i = 0; i < rapports.length; i++) {
-                await sendToPostgres(rapports[i]);
-            }
-            localStorage.setItem('rapports', "[]");
-            alert("Tous les rapports ont été synchronisés avec succès !");
-        } catch (error) {
-            alert("Échec de la synchronisation : " + error.message);
-        } finally {
-            btn.innerText = "🔄 SYNCHRONISER";
-            btn.disabled = false;
-            checkSyncButton();
-        }
-    }
-
-    function checkSyncButton() {
-        const rapports = JSON.parse(localStorage.getItem('rapports') || "[]");
-        document.getElementById('btn-sync').style.display = rapports.length > 0 ? 'block' : 'none';
-    }
-
-    window.addEventListener('load', checkSyncButton);
-    window.addEventListener('online', syncReports);
 
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('sw.js').catch(err => console.log('ServiceWorker error:', err));
