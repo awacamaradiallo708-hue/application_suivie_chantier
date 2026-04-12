@@ -234,29 +234,49 @@
     // URL de votre API Backend connectée à PostgreSQL (En local pour les tests)
     const API_POSTGRES_URL = "http://localhost:3000/api/rapports";
 
-    function toggleAutreEquipe(selectEl) {
-        const autreInput = selectEl.parentElement.querySelector('.eq-autre');
-        autreInput.style.display = (selectEl.value === 'Autre') ? 'block' : 'none';
-    }
-
     function addEquipe() {
         const div = document.createElement('div');
-        div.className = 'equipe-row';
+        div.className = 'equipe-block';
         div.innerHTML = `
-            <div style="display: flex; flex-direction: column; gap: 5px;">
-                <select class="eq-type" onchange="toggleAutreEquipe(this)">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <select class="eq-type" style="width: 70%; margin: 0;">
                     <option value="Équipe d'arrosage">Équipe d'arrosage</option>
                     <option value="Équipe de reboisement">Équipe de reboisement</option>
-                    <option value="Autre">Autre (préciser)</option>
+                    <option value="Équipe de plantation">Équipe de plantation</option>
+                    <option value="Équipe de terrassement">Équipe de terrassement</option>
                 </select>
-                <input type="text" placeholder="Quelle équipe ?" class="eq-autre" style="display:none">
+                <button type="button" class="btn-remove no-print" onclick="this.closest('.equipe-block').remove()">Supprimer l'équipe</button>
             </div>
-            <input type="text" placeholder="Nom responsable" class="eq-nom">
-            <input type="text" placeholder="Téléphone" class="eq-tel">
-            <input type="number" placeholder="Effectif" class="eq-nb">
-            <button type="button" class="no-print" style="background:#dc3545; color:white; padding: 5px 10px;" onclick="this.parentElement.remove()">✕</button>
+            <div class="workers-list"></div>
+            <button type="button" class="btn-add no-print" style="font-size: 0.8rem; padding: 5px 10px; margin-bottom:10px;" onclick="addOuvrier(this)">+ Ajouter un ouvrier</button>
+            <div style="font-weight: bold; font-size: 0.9rem;">Effectif : <span class="effectif-count">0</span></div>
         `;
         document.getElementById('equipes').appendChild(div);
+        addOuvrier(div.querySelector('.btn-add')); // Ajoute un premier ouvrier par défaut
+    }
+
+    function addOuvrier(btn) {
+        const container = btn.previousElementSibling;
+        const row = document.createElement('div');
+        row.className = 'worker-row';
+        row.innerHTML = `
+            <input type="text" placeholder="Nom de l'ouvrier" class="w-nom" style="flex: 2;">
+            <input type="tel" placeholder="Téléphone" class="w-tel" style="flex: 1;">
+            <button type="button" class="btn-remove" onclick="removeOuvrier(this)">✕</button>
+        `;
+        container.appendChild(row);
+        updateEffectif(container);
+    }
+
+    function removeOuvrier(btn) {
+        const container = btn.closest('.workers-list');
+        btn.closest('.worker-row').remove();
+        updateEffectif(container);
+    }
+
+    function updateEffectif(container) {
+        const count = container.querySelectorAll('.worker-row').length;
+        container.closest('.equipe-block').querySelector('.effectif-count').innerText = count;
     }
 
     const getChecked = (id) => {
@@ -269,14 +289,15 @@
     document.getElementById('form').onsubmit = function(e) {
         e.preventDefault();
         
-        const techData = Array.from(document.querySelectorAll('.tech-val')).map(i => `${i.dataset.name}: ${i.value || 'Non renseigné'}`).join(' | ');
-        const equipes = Array.from(document.querySelectorAll('.equipe-row')).map(row => {
-            const typeSelect = row.querySelector('.eq-type').value;
+        const equipes = Array.from(document.querySelectorAll('.equipe-block')).map(block => {
+            const workers = Array.from(block.querySelectorAll('.worker-row')).map(row => ({
+                nom: row.querySelector('.w-nom').value,
+                tel: row.querySelector('.w-tel').value
+            }));
             return {
-                type: typeSelect === 'Autre' ? row.querySelector('.eq-autre').value : typeSelect,
-                nom: row.querySelector('.eq-nom').value,
-                tel: row.querySelector('.eq-tel').value,
-                nb: row.querySelector('.eq-nb').value
+                type: block.querySelector('.eq-type').value,
+                ouvriers: workers,
+                effectif: workers.length
             };
         });
 
