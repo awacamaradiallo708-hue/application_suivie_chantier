@@ -5,8 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Suivi de Chantier</title>
     <link rel="manifest" href="manifest.json">
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js" crossorigin="anonymous"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" crossorigin="anonymous"></script>
     <style>
         :root { --primary: #1a252f; --secondary: #27ae60; --accent: #2980b9; --bg-sec: #f8f9fa; }
@@ -219,7 +217,7 @@
         <button type="submit" class="no-print">💾 ENREGISTRER LE RAPPORT</button>
         <button type="button" onclick="exportWord()" style="background-color: #2b5797; color: white;" class="no-print">📝 EXPORTER EN WORD</button>
         <button type="button" id="btn-sync" onclick="syncReports()" style="background-color: #f39c12; display: none;" class="no-print">🔄 SYNCHRONISER</button>
-        <button type="button" onclick="loadRecentReports()" class="export-btn no-print" style="width:100%; border:none;">📊 VISUALISER LES DONNÉES (FIREBASE)</button>
+        <button type="button" onclick="loadRecentReports()" class="export-btn no-print" style="width:100%; border:none;">📊 VISUALISER LES DONNÉES (POSTGRESQL)</button>
     </form>
 
     <div id="firebase-data" style="margin-top: 40px;" class="no-print">
@@ -230,18 +228,8 @@
 <div id="loading-overlay">⏳ Action en cours...</div>
 
 <script>
-    // Configuration Firebase
-    const firebaseConfig = {
-        apiKey: "AIzaSyCDBmlqnMQCrjI2xw5KmWHOS3t5RUP8R7k",
-        authDomain: "chantier-reboisement-louga.firebaseapp.com",
-        projectId: "chantier-reboisement-louga",
-        storageBucket: "chantier-reboisement-louga.firebasestorage.app",
-        messagingSenderId: "261114224094",
-        appId: "1:261114224094:web:7671d2e754bf8efa68914f"
-    };
-
-    // URL de votre API Backend (Node.js/Python) connectée à PostgreSQL
-    const API_POSTGRES_URL = "https://votre-api-serveur.com/api/rapports";
+    // URL de votre API Backend connectée à PostgreSQL (En local pour les tests)
+    const API_POSTGRES_URL = "http://localhost:3000/api/rapports";
 
     function toggleAutreEquipe(selectEl) {
         const autreInput = selectEl.parentElement.querySelector('.eq-autre');
@@ -617,18 +605,20 @@
         listDiv.innerHTML = "Chargement des données...";
         
         try {
-            const snapshot = await db.collection("rapports").orderBy("timestamp", "desc").limit(5).get();
-            listDiv.innerHTML = "";
-            if(snapshot.empty) { listDiv.innerHTML = "Aucun rapport trouvé."; return; }
+            const response = await fetch(API_POSTGRES_URL);
+            if (!response.ok) throw new Error('Erreur de connexion au serveur PostgreSQL');
+            const rapports = await response.json();
             
-            snapshot.forEach(doc => {
-                const r = doc.data();
+            listDiv.innerHTML = "";
+            if(rapports.length === 0) { listDiv.innerHTML = "Aucun rapport trouvé."; return; }
+            
+            rapports.forEach(r => {
                 const div = document.createElement('div');
                 div.className = 'report-card';
                 div.innerHTML = `
-                    <strong>📅 Date:</strong> ${r.date} | <strong>📍 Site:</strong> ${r.localite}<br>
+                    <strong>📅 Date:</strong> ${r.date_rapport} | <strong>📍 Site:</strong> ${r.localite}<br>
                     <strong>👤 Responsable:</strong> ${r.responsable}<br>
-                    <strong>🛠 Activités:</strong> ${r.activite_tech ? r.activite_tech.substring(0, 50) : 'N/A'}...
+                    <strong>🛠 Activités:</strong> ${r.activite_tech ? r.activite_tech.substring(0, 45) : 'N/A'}...
                 `;
                 listDiv.appendChild(div);
             });
@@ -652,7 +642,7 @@
 
         try {
             for (let i = 0; i < rapports.length; i++) {
-                await db.collection("rapports").add(rapports[i]);
+                await sendToPostgres(rapports[i]);
             }
             localStorage.setItem('rapports', "[]");
             alert("Tous les rapports ont été synchronisés avec succès !");

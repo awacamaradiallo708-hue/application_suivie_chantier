@@ -13,9 +13,20 @@ app.use(express.json({ limit: '10mb' })); // Augmente la limite pour recevoir le
 const pool = new Pool({
   user: 'postgres',           // Votre utilisateur pgAdmin
   host: 'localhost',          // 'localhost' ou l'IP de votre serveur
-  database: 'votre_bdd',      // Le nom de votre base de données
-  password: 'votre_password', // Votre mot de passe
+  database: 'base_donnees_suivie_chantier',      // Le nom de votre base de données
+  password: 'couna2000', // Votre mot de passe
   port: 5432,
+});
+
+// Route pour récupérer les derniers rapports (pour QGIS et l'affichage web)
+app.get('/api/rapports', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT *, ST_X(geom) as lon, ST_Y(geom) as lat FROM rapports_chantier ORDER BY date_rapport DESC LIMIT 5');
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Erreur lors de la récupération:', err);
+    res.status(500).json({ success: false, error: 'Erreur serveur' });
+  }
 });
 
 // Route pour recevoir les rapports
