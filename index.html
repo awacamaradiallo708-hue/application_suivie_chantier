@@ -68,8 +68,19 @@
 
 <div class="container" id="report-container">
     <div class="logo-header">
-        <!-- Utilisation d'une image base64 intégrée pour garantir l'affichage -->
-        <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIwIiBoZWlnaHQ9IjEyMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CiAgICAgICAgICAgIDxjaXJjbGUgY3g9IjEwMCIgY3k9IjEwMCIgcj0iOTUiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzI3YWU2MCIgc3Ryb2tlLXdpZHRoPSI1Ii8+CiAgICAgICAgICAgIDxwYXRoIGQ9Ik0xMDAgMTYwIFY2MCBNMTAwIDgwIEw3MCAxMTAgTTEwMCA4MCBMMTMwIDExMCBNMTAwIDEwMCBMNzUgMTM1IE0xMDAgMTAwIEwxMjUgMTM1IiAKICAgICAgICAgICAgICAgICAgc3Ryb2tlPSIjMWEyNTJmIiBzdHJva2Utd2lkdGg9IjgiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIvPgogICAgICAgICAgICA8Y2lyY2xlIGN4PSI3MCIgY3k9IjEwNSIgcj0iMTUiIGZpbGw9IiMyN2FlNjAiLz4KICAgICAgICAgICAgPGNpcmNsZSBjeD0iMTMwIiBjeT0iMTA1IiByPSIxNSIgZmlsbD0iIzJlY2M3MSIvPgogICAgICAgICAgICA8Y2lyY2xlIGN4PSI3NSIgY3k9IjEzNSIgcj0iMTIiIGZpbGw9IiMyN2FlNjAiLz4KICAgICAgICAgICAgPGNpcmNsZSBjeD0iMTI1IiBjeT0iMTM1IiByPSIxMiIgZmlsbD0iIzJlY2M3MSIvPgogICAgICAgICAgICA8Y2lyY2xlIGN4PSIxMDAiIGN5PSI2NSIgcj0iMjAiIGZpbGw9IiMyN2FlNjAiLz4KICAgICAgICAgICAgPHRleHQgeD0iMTAwIiB5PSIxODUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZm9udC13ZWlnaHQ9ImJvbGQiIAogICAgICAgICAgICAgICAgICBmaWxsPSIjMWEyNTJmIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5BUEVSQU0gLSBMT1VHQTwvdGV4dD4KICAgICAgICA8L3N2Zz4=" alt="Logo APERAM">
+        <!-- Logo SVG intégré pour éviter les erreurs 404 sur GitHub et garantir l'affichage PDF/Word -->
+        <svg width="120" height="120" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="100" cy="100" r="95" fill="none" stroke="#27ae60" stroke-width="5"/>
+            <path d="M100 160 V60 M100 80 L70 110 M100 80 L130 110 M100 100 L75 135 M100 100 L125 135" 
+                  stroke="#1a252f" stroke-width="8" stroke-linecap="round"/>
+            <circle cx="70" cy="105" r="15" fill="#27ae60"/>
+            <circle cx="130" cy="105" r="15" fill="#2ecc71"/>
+            <circle cx="75" cy="135" r="12" fill="#27ae60"/>
+            <circle cx="125" cy="135" r="12" fill="#2ecc71"/>
+            <circle cx="100" cy="65" r="20" fill="#27ae60"/>
+            <text x="100" y="185" font-family="Arial" font-size="14" font-weight="bold" 
+                  fill="#1a252f" text-anchor="middle">APERAM - LOUGA</text>
+        </svg>
     </div>
     <div class="header-project">
         <h2>Projet : Plantation d'alignement et Reboisement - Lot 2 (Guéoul - Louga)</h2>
@@ -206,7 +217,6 @@
         <textarea id="commentaire" placeholder="Notes additionnelles..."></textarea>
 
         <button type="submit" class="no-print">💾 ENREGISTRER LE RAPPORT</button>
-        <button type="button" onclick="exportPDF()" style="background-color: #e74c3c; color: white;" class="no-print">📄 EXPORTER EN PDF</button>
         <button type="button" onclick="exportWord()" style="background-color: #2b5797; color: white;" class="no-print">📝 EXPORTER EN WORD</button>
         <button type="button" id="btn-sync" onclick="syncReports()" style="background-color: #f39c12; display: none;" class="no-print">🔄 SYNCHRONISER</button>
         <button type="button" onclick="loadRecentReports()" class="export-btn no-print" style="width:100%; border:none;">📊 VISUALISER LES DONNÉES (FIREBASE)</button>
@@ -230,8 +240,8 @@
         appId: "1:261114224094:web:7671d2e754bf8efa68914f"
     };
 
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
+    // URL de votre API Backend (Node.js/Python) connectée à PostgreSQL
+    const API_POSTGRES_URL = "https://votre-api-serveur.com/api/rapports";
 
     function toggleAutreEquipe(selectEl) {
         const autreInput = selectEl.parentElement.querySelector('.eq-autre');
@@ -314,8 +324,26 @@
         rapports.push(data);
         localStorage.setItem('rapports', JSON.stringify(rapports));
         alert("Rapport enregistré !");
+        
+        // Envoi vers PostgreSQL via l'API
+        sendToPostgres(data);
         checkSyncButton();
     };
+
+    async function sendToPostgres(data) {
+        if (!API_POSTGRES_URL || API_POSTGRES_URL.includes("votre-api")) return;
+        
+        try {
+            await fetch(API_POSTGRES_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            console.log("Données envoyées vers PostgreSQL");
+        } catch (error) {
+            console.error("Erreur PostgreSQL:", error);
+        }
+    }
 
     document.getElementById('photo').addEventListener('change', function (e) {
         const file = e.target.files[0];
@@ -412,7 +440,8 @@
             resultats_attendus: document.getElementById('resultats_attendus').value || 'Non renseigné',
             lat: document.getElementById('lat').value || 'Non relevée',
             lon: document.getElementById('lon').value || 'Non relevée',
-            commentaire: document.getElementById('commentaire').value || 'Aucun commentaire'
+            commentaire: document.getElementById('commentaire').value || 'Aucun commentaire',
+            photo: photoBase64 // On s'assure que la photo est incluse
         };
     }
 
@@ -440,6 +469,12 @@
             techHTML += `<tr><td style="border:1px solid #ddd; padding:8px;">${activity.name}</td><td style="border:1px solid #ddd; padding:8px;">${activity.value}</td></tr>`;
         });
         techHTML += '</tbody></table>';
+
+        // Image pour le rapport
+        let photoHTML = '';
+        if (data.photo) {
+            photoHTML = `<div class="section"><div class="section-title">📸 PHOTO DU CHANTIER</div><img src="${data.photo}" style="max-width:100%; border:1px solid #ddd;"></div>`;
+        }
 
         return `
             <!DOCTYPE html>
@@ -525,6 +560,8 @@
                     <div class="info-row"><span class="label">Latitude :</span><span class="value">${data.lat}</span></div>
                     <div class="info-row"><span class="label">Longitude :</span><span class="value">${data.lon}</span></div>
                 </div>
+
+                ${photoHTML}
 
                 <div class="section">
                     <div class="section-title">📝 OBSERVATIONS GÉNÉRALES</div>
