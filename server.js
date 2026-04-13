@@ -60,7 +60,7 @@ app.post('/api/rapports', (req, res) => {
     points_critiques_comm: data.points_critiques_comm,
 
     // Médias et GPS
-    photo: data.photo,
+    photos: data.photos,
     lon: data.lon,
     lat: data.lat
   };

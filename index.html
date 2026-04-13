@@ -196,8 +196,8 @@
                 <input type="text" id="lat" placeholder="Lat" readonly>
                 <input type="text" id="lon" placeholder="Lon" readonly>
             </div>
-            <input type="file" id="photo" accept="image/*" capture="environment">
-            <div id="photo-preview-container" style="display:none"><img id="photo-preview" style="width:100%"></div>
+            <input type="file" id="photo" accept="image/*" multiple>
+            <div id="photo-preview-container" style="display:flex; flex-wrap:wrap; gap:10px; margin-top:10px;"></div>
         </section>
 
         <label>Observations Générales Finales</label>
@@ -285,7 +285,7 @@
         return vals.join(', ') || 'Aucun';
     };
 
-    let photoBase64 = null;
+    let photosBase64 = [];
 
     document.getElementById('form').onsubmit = function(e) {
         e.preventDefault();
@@ -336,7 +336,7 @@
             lat: document.getElementById('lat').value,
             lon: document.getElementById('lon').value,
             commentaire: document.getElementById('commentaire').value,
-            photo: photoBase64,
+            photos: photosBase64,
             timestamp: new Date().getTime()
         };
 
@@ -365,37 +365,51 @@
     }
 
     document.getElementById('photo').addEventListener('change', function (e) {
-        const file = e.target.files[0];
-        if (!file) return;
+        const files = Array.from(e.target.files);
+        if (files.length === 0) return;
 
-        const reader = new FileReader();
-        reader.onload = function (event) {
-            const img = new Image();
-            img.src = event.target.result;
-            img.onload = function () {
-                const canvas = document.createElement('canvas');
-                const MAX_WIDTH = 600;
-                const MAX_HEIGHT = 600;
-                let width = img.width;
-                let height = img.height;
+        const previewContainer = document.getElementById('photo-preview-container');
+        previewContainer.innerHTML = ''; // Réinitialiser l'affichage
+        photosBase64 = []; // Réinitialiser le tableau des données
 
-                if (width > height) {
-                    if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
-                } else {
-                    if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; }
-                }
+        files.forEach(file => {
+            const reader = new FileReader();
+            reader.onload = function (event) {
+                const img = new Image();
+                img.src = event.target.result;
+                img.onload = function () {
+                    const canvas = document.createElement('canvas');
+                    const MAX_WIDTH = 800; // Légère augmentation de la qualité
+                    const MAX_HEIGHT = 800;
+                    let width = img.width;
+                    let height = img.height;
 
-                canvas.width = width;
-                canvas.height = height;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0, width, height);
+                    if (width > height) {
+                        if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
+                    } else {
+                        if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; }
+                    }
 
-                photoBase64 = canvas.toDataURL('image/jpeg', 0.5);
-                document.getElementById('photo-preview').src = photoBase64;
-                document.getElementById('photo-preview-container').style.display = 'block';
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    const base64 = canvas.toDataURL('image/jpeg', 0.6);
+                    photosBase64.push(base64);
+
+                    const imgTag = document.createElement('img');
+                    imgTag.src = base64;
+                    imgTag.style.width = '100px';
+                    imgTag.style.height = '100px';
+                    imgTag.style.objectFit = 'cover';
+                    imgTag.style.borderRadius = '8px';
+                    imgTag.style.border = '1px solid #ddd';
+                    previewContainer.appendChild(imgTag);
+                };
             };
-        };
-        reader.readAsDataURL(file);
+            reader.readAsDataURL(file);
+        });
     });
 
     function getGPS() {
@@ -462,7 +476,7 @@
             lat: document.getElementById('lat').value || 'Non relevée',
             lon: document.getElementById('lon').value || 'Non relevée',
             commentaire: document.getElementById('commentaire').value || 'Aucun commentaire',
-            photo: photoBase64 // On s'assure que la photo est incluse
+            photos: photosBase64 
         };
     }
 
@@ -501,10 +515,14 @@
         });
         techHTML += '</tbody></table>';
 
-        // Image pour le rapport
-        let photoHTML = '';
-        if (data.photo) {
-            photoHTML = `<div class="section"><div class="section-title"> PHOTO DU CHANTIER</div><img src="${data.photo}" style="max-width:100%; border:1px solid #ddd;"></div>`;
+        // Images pour le rapport
+        let photosHTML = '';
+        if (data.photos && data.photos.length > 0) {
+            photosHTML = `<div class="section"><div class="section-title"> PHOTOS DU CHANTIER</div><div style="display:flex; flex-wrap:wrap; gap:10px;">`;
+            data.photos.forEach(p => {
+                photosHTML += `<img src="${p}" style="max-width:45%; border:1px solid #ddd; border-radius:5px;">`;
+            });
+            photosHTML += `</div></div>`;
         }
 
         return `
@@ -589,7 +607,7 @@
                     <div class="info-row"><span class="label">Longitude :</span><span class="value">${data.lon}</span></div>
                 </div>
 
-                ${photoHTML}
+                ${photosHTML}
 
                 <div class="section">
                     <div class="section-title">OBSERVATIONS GÉNÉRALES</div>
