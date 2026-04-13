@@ -1,9 +1,10 @@
-const CACHE_NAME = 'chantier-v14'; // On passe à la v14 pour forcer la mise à jour
+const CACHE_NAME = 'chantier-v15'; // Passage à la v15 pour forcer la mise à jour sur mobile
 const ASSETS = [
   './',
   'index.html',
   'manifest.json',
-  'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js'
+  'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js',
+  'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js'
 ];
 
 self.addEventListener('install', e => {
