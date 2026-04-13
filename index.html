@@ -549,8 +549,10 @@
             </head>
             <body>
                 <div class="header">
-                    <h1 class="title">RAPPORT JOURNALIER DE CHANTIER</h1>
-                    <p class="subtitle">Projet : Plantation d'alignement et Reboisement - Lot 2 (Guéoul - Louga)</p>
+                    <h1 class="title">--------------------------------------------------
+                         Projet : Travaux de plantation d’alignement et de reboisement compensatoire de sites d’emprunt – Autoroute Dakar-Tivaouane-Saint Louis – Lot 2 (Guéoul - Louga)
+                                     --------------------------------------------------</h1>
+        
                 </div>
 
                 <div class="section">
@@ -577,23 +579,23 @@
                     <div class="section-title">RESSOURCES ET LOGISTIQUE</div>
                     <div class="info-row"><span class="label">Main-d'œuvre :</span></div>
                     ${equipesHTML}
-                    <div class="info-row"><span class="label">Commentaire main-d'œuvre :</span><span class="value">${data.comm_ressources}</span></div>
+                    <div class="info-row"><span class="label">Commentaires main-d'œuvre :</span><span class="value">${data.comm_ressources}</span></div>
                     <div class="info-row"><span class="label">Matériel utilisé :</span><span class="value">${data.materiel}</span></div>
-                    <div class="info-row"><span class="label">Commentaire matériel :</span><span class="value">${data.comm_materiel}</span></div>
+                    <div class="info-row"><span class="label">Commentaires matériel :</span><span class="value">${data.comm_materiel}</span></div>
                     <div class="info-row"><span class="label">Approvisionnement :</span><span class="value">${data.approvisionnement}</span></div>
-                    <div class="info-row"><span class="label">Commentaire approvisionnement :</span><span class="value">${data.comm_approv}</span></div>
+                    <div class="info-row"><span class="label">Commentaires approvisionnement :</span><span class="value">${data.comm_approv}</span></div>
                 </div>
 
                 <div class="section">
                     <div class="section-title">ÉTAT PHYTOSANITAIRE ET OBSERVATIONS</div>
                     <div class="info-row"><span class="label">Espèces concernées :</span><span class="value">${data.especes}</span></div>
-                    <div class="info-row"><span class="label">Commentaire espèces :</span><span class="value">${data.comm_especes}</span></div>
+                    <div class="info-row"><span class="label">Commentaires espèces :</span><span class="value">${data.comm_especes}</span></div>
                     <div class="info-row"><span class="label">Santé des plants :</span><span class="value">${data.sante_plants}</span></div>
-                    <div class="info-row"><span class="label">Commentaire santé :</span><span class="value">${data.comm_sante}</span></div>
+                    <div class="info-row"><span class="label">Commentaires santé :</span><span class="value">${data.comm_sante}</span></div>
                     <div class="info-row"><span class="label">Produits utilisés :</span><span class="value">${data.produits}</span></div>
                     <div class="info-row"><span class="label">Commentaire produits :</span><span class="value">${data.comm_produits}</span></div>
                     <div class="info-row"><span class="label">Points critiques :</span><span class="value">${data.points_critiques}</span></div>
-                    <div class="info-row"><span class="label">Commentaire points critiques :</span><span class="value">${data.comm_points_critiques}</span></div>
+                    <div class="info-row"><span class="label">Commentaires points critiques :</span><span class="value">${data.comm_points_critiques}</span></div>
                 </div>
 
                 <div class="section">
@@ -660,6 +662,11 @@
     // Export Excel des informations du personnel
     function exportExcel() {
         const allReports = JSON.parse(localStorage.getItem('rapports') || "[]");
+        if (allReports.length === 0) {
+            alert("Aucun rapport enregistré sur cet appareil pour l'exportation.");
+            return;
+        }
+
         const workbook = XLSX.utils.book_new();
 
         // Group workers by team type and then by status (Permanent/Journalier)
@@ -722,7 +729,19 @@
             });
         }
 
-        XLSX.writeFile(workbook, `Pointage_Chantier_Global_${new Date().toISOString().slice(0,10)}.xlsx`);
+        // Version compatible mobile pour le téléchargement
+        const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+        const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `Pointage_Chantier_Global_${new Date().toISOString().slice(0,10)}.xlsx`;
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => {
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        }, 100);
     }
 
     async function loadRecentReports() {
