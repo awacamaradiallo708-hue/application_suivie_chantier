@@ -1,4 +1,4 @@
-const CACHE_NAME = 'chantier-v13';
+const CACHE_NAME = 'chantier-v14'; // On passe à la v14 pour forcer la mise à jour
 const ASSETS = [
   './',
   'index.html',
