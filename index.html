@@ -274,13 +274,18 @@
         e.preventDefault();
         
         const equipes = Array.from(document.querySelectorAll('.equipe-block')).map(block => {
+            const equipeTypeSelect = block.querySelector('.eq-type');
+            let equipeType = equipeTypeSelect.value;
+            if (equipeType === 'Autre') {
+                equipeType = 'Autre: ' + block.querySelector('.other-equipe-type-input').value;
+            }
             const workers = Array.from(block.querySelectorAll('.worker-row')).map(row => ({
                 nom: row.querySelector('.w-nom').value,
                 tel: row.querySelector('.w-tel').value,
-                adresse: row.querySelector('.w-adr').value
+                statut: row.querySelector('.w-statut').value // Changed from adresse to statut
             }));
             return {
-                type: block.querySelector('.eq-type').value,
+                type: equipeType, // Use the determined equipeType
                 ouvriers: workers,
                 effectif: workers.length
             };
@@ -398,7 +403,7 @@
             const workers = Array.from(block.querySelectorAll('.worker-row')).map(row => ({
                 nom: row.querySelector('.w-nom').value || 'N/A',
                 tel: row.querySelector('.w-tel').value || 'N/A',
-                adresse: row.querySelector('.w-adr').value || 'N/A'
+                statut: row.querySelector('.w-statut').value || 'N/A' // Changed from adresse to statut
             }));
             return {
                 type: block.querySelector('.eq-type').value,
@@ -457,7 +462,7 @@
                             <tr style="background:#eee;">
                                 <th style="border:1px solid #ddd; padding:5px;">Nom de l'ouvrier</th>
                                 <th style="border:1px solid #ddd; padding:5px;">Téléphone</th>
-                                <th style="border:1px solid #ddd; padding:5px;">Adresse</th>
+                                <th style="border:1px solid #ddd; padding:5px;">Statut</th>
                             </tr>
                             ${eq.ouvriers.map(o => `
                                 <tr><td style="border:1px solid #ddd; padding:5px;">${o.nom}</td><td style="border:1px solid #ddd; padding:5px;">${o.tel}</td><td style="border:1px solid #ddd; padding:5px;">${o.adresse}</td></tr>
@@ -618,31 +623,72 @@
 
     // Export Excel des informations du personnel
     function exportExcel() {
-        const data = collectFormData();
-        let rows = [];
-        let globalEffectif = 0;
-        data.equipes.forEach(eq => globalEffectif += eq.effectif);
+        const allReports = JSON.parse(localStorage.getItem('rapports') || "[]");
+        const workbook = XLSX.utils.book_new();
 
-        data.equipes.forEach(eq => {
-            eq.ouvriers.forEach(o => {
-                rows.push({
-                    "Date": data.date,
-                    "Responsable": data.responsable,
-                    "Localité": data.localite,
-                    "Type d'Équipe": eq.type,
-                    "Nom de l'Ouvrier": o.nom,
-                    "Téléphone": o.tel,
-                    "Adresse": o.adresse,
-                    "Effectif de l'Équipe": eq.effectif,
-                    "Effectif Global Chantier": globalEffectif
+        // Group workers by team type and then by status (Permanent/Journalier)
+        const groupedWorkers = {};
+
+        allReports.forEach(report => {
+            const reportDate = report.date;
+            const responsable = report.responsable;
+            const localite = report.localite;
+
+            report.equipes.forEach(equipe => {
+                const teamType = equipe.type;
+                if (!groupedWorkers[teamType]) {
+                    groupedWorkers[teamType] = {
+                        permanent: [],
+                        journalier: []
+                    };
+                }
+
+                equipe.ouvriers.forEach(ouvrier => {
+                    const workerData = {
+                        "Date du Rapport": reportDate,
+                        "Responsable APERAM": responsable,
+                        "Localité": localite,
+                        "Nom de l'Ouvrier": ouvrier.nom,
+                        "Téléphone": ouvrier.tel,
+                        "Statut": ouvrier.statut,
+                        "Effectif de l'Équipe": equipe.effectif
+                    };
+
+                    if (ouvrier.statut === "Permanent") {
+                        groupedWorkers[teamType].permanent.push(workerData);
+                    } else if (ouvrier.statut === "Journalier") {
+                        groupedWorkers[teamType].journalier.push(workerData);
+                    }
                 });
             });
         });
 
-        const worksheet = XLSX.utils.json_to_sheet(rows);
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, "Rapport Personnel");
-        XLSX.writeFile(workbook, `Pointage_Chantier_${data.date}.xlsx`);
+        // Create a sheet for each team type
+        for (const teamType in groupedWorkers) {
+            const teamData = groupedWorkers[teamType];
+            let sheetData = [];
+
+            if (teamData.permanent.length > 0) {
+                sheetData.push(["Ouvriers Permanents"]);
+                sheetData.push(Object.keys(teamData.permanent[0])); // Headers
+                teamData.permanent.forEach(worker => sheetData.push(Object.values(worker)));
+                sheetData.push([]); // Empty row for separation
+            }
+
+            if (teamData.journalier.length > 0) {
+                sheetData.push(["Ouvriers Journaliers"]);
+                sheetData.push(Object.keys(teamData.journalier[0])); // Headers
+                teamData.journalier.forEach(worker => sheetData.push(Object.values(worker)));
+                sheetData.push([]); // Empty row for separation
+            }
+
+            if (sheetData.length > 0) {
+                const worksheet = XLSX.utils.aoa_to_sheet(sheetData);
+                XLSX.utils.book_append_sheet(workbook, worksheet, teamType.substring(0, 31)); // Sheet name max 31 chars
+            }
+        }
+
+        XLSX.writeFile(workbook, `Pointage_Chantier_Global_${new Date().toISOString().slice(0,10)}.xlsx`);
     }
 
     async function loadRecentReports() {
