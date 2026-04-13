@@ -222,12 +222,15 @@
         div.className = 'equipe-block';
         div.innerHTML = `
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                <select class="eq-type" style="width: 70%; margin: 0;">
-                    <option value="Équipe d'arrosage">Équipe d'arrosage</option>
-                    <option value="Équipe de reboisement">Équipe de reboisement</option>
-                    <option value="Équipe de plantation">Équipe de plantation</option>
-                    <option value="Équipe de terrassement">Équipe de terrassement</option>
-                </select>
+                <div style="width: 70%;">
+                    <select class="eq-type" style="width: 100%; margin: 0;" onchange="toggleAutreTeam(this)">
+                        <option value="Équipe d'arrosage">Équipe d'arrosage</option>
+                        <option value="Équipe plantation et/ou reboisement">Équipe plantation et/ou reboisement</option>
+                        <option value="Équipe des ouvriers concepteurs de gavion">Équipe des ouvriers concepteurs de gavion</option>
+                        <option value="Autre">Équipe autre</option>
+                    </select>
+                    <input type="text" class="other-equipe-type-input" placeholder="Précisez l'équipe..." style="width:100%; margin-top:8px; display:none;">
+                </div>
                 <button type="button" class="btn-remove no-print" onclick="this.closest('.equipe-block').remove()">Supprimer l'équipe</button>
             </div>
             <div class="workers-list"></div>
@@ -238,6 +241,17 @@
         addOuvrier(div.querySelector('.btn-add')); // Ajoute un premier ouvrier par défaut
     }
 
+    function toggleAutreTeam(select) {
+        const customInput = select.closest('.equipe-block').querySelector('.other-equipe-type-input');
+        if (select.value === 'Autre') {
+            customInput.style.display = 'block';
+            customInput.focus();
+        } else {
+            customInput.style.display = 'none';
+            customInput.value = '';
+        }
+    }
+
     function addOuvrier(btn) {
         const container = btn.previousElementSibling;
         const row = document.createElement('div');
@@ -245,7 +259,10 @@
         row.innerHTML = `
             <input type="text" placeholder="Nom" class="w-nom" style="flex: 1.5;">
             <input type="tel" placeholder="Téléphone" class="w-tel" style="flex: 1;">
-            <input type="text" placeholder="Adresse" class="w-adr" style="flex: 1.5;">
+            <select class="w-statut" style="flex: 1;">
+                <option value="Permanent">Permanent</option>
+                <option value="Journalier">Journalier</option>
+            </select>
             <button type="button" class="btn-remove" onclick="removeOuvrier(this)">✕</button>
         `;
         container.appendChild(row);
@@ -277,12 +294,13 @@
             const equipeTypeSelect = block.querySelector('.eq-type');
             let equipeType = equipeTypeSelect.value;
             if (equipeType === 'Autre') {
-                equipeType = 'Autre: ' + block.querySelector('.other-equipe-type-input').value;
+                const customType = block.querySelector('.other-equipe-type-input').value.trim();
+                equipeType = customType ? `Autre: ${customType}` : 'Équipe autre';
             }
             const workers = Array.from(block.querySelectorAll('.worker-row')).map(row => ({
                 nom: row.querySelector('.w-nom').value,
                 tel: row.querySelector('.w-tel').value,
-                statut: row.querySelector('.w-statut').value // Changed from adresse to statut
+                statut: row.querySelector('.w-statut').value
             }));
             return {
                 type: equipeType, // Use the determined equipeType
@@ -465,7 +483,7 @@
                                 <th style="border:1px solid #ddd; padding:5px;">Statut</th>
                             </tr>
                             ${eq.ouvriers.map(o => `
-                                <tr><td style="border:1px solid #ddd; padding:5px;">${o.nom}</td><td style="border:1px solid #ddd; padding:5px;">${o.tel}</td><td style="border:1px solid #ddd; padding:5px;">${o.adresse}</td></tr>
+                                <tr><td style="border:1px solid #ddd; padding:5px;">${o.nom}</td><td style="border:1px solid #ddd; padding:5px;">${o.tel}</td><td style="border:1px solid #ddd; padding:5px;">${o.statut}</td></tr>
                             `).join('')}
                         </table>
                     </div>`;
@@ -663,29 +681,27 @@
             });
         });
 
-        // Create a sheet for each team type
+        const sanitizeSheetName = name => name.replace(/[\[\]\*\/\\\?\:]/g, '').substring(0, 31);
+
+        // Create a sheet for each team type / status combination
         for (const teamType in groupedWorkers) {
             const teamData = groupedWorkers[teamType];
-            let sheetData = [];
 
-            if (teamData.permanent.length > 0) {
-                sheetData.push(["Ouvriers Permanents"]);
-                sheetData.push(Object.keys(teamData.permanent[0])); // Headers
-                teamData.permanent.forEach(worker => sheetData.push(Object.values(worker)));
-                sheetData.push([]); // Empty row for separation
-            }
+            [
+                { status: 'Permanent', workers: teamData.permanent },
+                { status: 'Journalier', workers: teamData.journalier }
+            ].forEach(group => {
+                if (group.workers.length === 0) return;
 
-            if (teamData.journalier.length > 0) {
-                sheetData.push(["Ouvriers Journaliers"]);
-                sheetData.push(Object.keys(teamData.journalier[0])); // Headers
-                teamData.journalier.forEach(worker => sheetData.push(Object.values(worker)));
-                sheetData.push([]); // Empty row for separation
-            }
+                const sheetData = [];
+                sheetData.push([`${group.status}`]);
+                sheetData.push(Object.keys(group.workers[0]));
+                group.workers.forEach(worker => sheetData.push(Object.values(worker)));
 
-            if (sheetData.length > 0) {
                 const worksheet = XLSX.utils.aoa_to_sheet(sheetData);
-                XLSX.utils.book_append_sheet(workbook, worksheet, teamType.substring(0, 31)); // Sheet name max 31 chars
-            }
+                const sheetName = sanitizeSheetName(`${teamType} - ${group.status}`);
+                XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
+            });
         }
 
         XLSX.writeFile(workbook, `Pointage_Chantier_Global_${new Date().toISOString().slice(0,10)}.xlsx`);
