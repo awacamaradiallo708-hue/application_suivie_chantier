@@ -206,7 +206,7 @@
         <textarea id="commentaire" placeholder="Notes additionnelles..."></textarea>
 
         <button type="submit" class="no-print"> ENREGISTRER LE RAPPORT</button>
-        <button type="button" onclick="exportWord()" style="background-color: #2b5797; color: white;" class="no-print"> EXPORTER EN WORD</button>
+        <button type="button" onclick="exportWord()" style="background-color: #22076e; color: white;" class="no-print"> EXPORTER EN WORD</button>
         <button type="button" onclick="exportExcel()" style="background-color: #27ae60; color: white;" class="no-print"> EXPORTER EN EXCEL</button>
     </form>
 
@@ -481,183 +481,175 @@
         };
     }
 
-    // Générer le contenu HTML pour l'export
+  // Générer le contenu HTML pour l'export (Conformité Canevas Word)
     function generateExportHTML() {
         const data = collectFormData();
 
-        let equipesHTML = '<div style="margin-top: 10px;">';
-        if (data.equipes.length > 0) {
-            data.equipes.forEach((eq, index) => {
-                equipesHTML += `
-                    <div style="background: #f9f9f9; padding: 10px; border: 1px solid #ccc; margin-bottom: 10px; border-radius: 5px;">
-                        <h4 style="margin-top:0; color:#1a252f;">Équipe ${index + 1} : ${eq.type} (Effectif : ${eq.effectif})</h4>
-                        <table style="width:100%; border-collapse: collapse; font-size: 12px;">
-                            <tr style="background:#eee;">
-                                <th style="border:1px solid #ddd; padding:5px;">Nom de l'ouvrier</th>
-                                <th style="border:1px solid #ddd; padding:5px;">Téléphone</th>
-                                <th style="border:1px solid #ddd; padding:5px;">Statut</th>
+        // Préparation du tableau technique
+        let techHTML = `
+            <table style="width:100%; border-collapse: collapse; margin-top: 5px;">
+                <thead>
+                    <tr style="background:#eee;">
+                        <th style="border:1px solid #000; padding:5px; text-align:left;">ACTIVITÉ</th>
+                        <th style="border:1px solid #000; padding:5px; text-align:left;">QUANTITÉ / STATUT</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${data.techActivities.map(a => `
+                        <tr>
+                            <td style="border:1px solid #000; padding:5px;">${a.name}</td>
+                            <td style="border:1px solid #000; padding:5px;">${a.value}</td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>`;
+
+        // Préparation des équipes
+        let equipesHTML = '';
+        data.equipes.forEach((eq, index) => {
+            equipesHTML += `
+                <div style="margin-top:10px; border:1px solid #eee; padding:5px;">
+                    <strong>Équipe : ${eq.type} (Effectif : ${eq.effectif})</strong>
+                    <table style="width:100%; border-collapse: collapse; font-size: 11px; margin-top:5px;">
+                        <tr style="background:#f2f2f2;">
+                            <th style="border:1px solid #000; padding:3px;">Nom</th>
+                            <th style="border:1px solid #000; padding:3px;">Téléphone</th>
+                            <th style="border:1px solid #000; padding:3px;">Statut</th>
+                        </tr>
+                        ${eq.ouvriers.map(o => `
+                            <tr>
+                                <td style="border:1px solid #000; padding:3px;">${o.nom}</td>
+                                <td style="border:1px solid #000; padding:3px;">${o.tel}</td>
+                                <td style="border:1px solid #000; padding:3px;">${o.statut}</td>
                             </tr>
-                            ${eq.ouvriers.map(o => `
-                                <tr><td style="border:1px solid #ddd; padding:5px;">${o.nom}</td><td style="border:1px solid #ddd; padding:5px;">${o.tel}</td><td style="border:1px solid #ddd; padding:5px;">${o.statut}</td></tr>
-                            `).join('')}
-                        </table>
-                    </div>`;
-            });
-            equipesHTML += '</div>';
-        } else {
-            equipesHTML = '<p>Aucune équipe renseignée</p>';
-        }
-
-        // Générer le tableau des activités techniques
-        let techHTML = '<table class="tech-table" style="width:100%; border-collapse:collapse;">';
-        techHTML += '<thead><tr style="background:#f2f2f2;"><th style="border:1px solid #ddd; padding:8px;">Activité</th><th style="border:1px solid #ddd; padding:8px;">Valeur</th></tr></thead><tbody>';
-        data.techActivities.forEach(activity => {
-            techHTML += `<tr><td style="border:1px solid #ddd; padding:8px;">${activity.name}</td><td style="border:1px solid #ddd; padding:8px;">${activity.value}</td></tr>`;
+                        `).join('')}
+                    </table>
+                </div>`;
         });
-        techHTML += '</tbody></table>';
 
-        // Images pour le rapport
+        // Photos
         let photosHTML = '';
         if (data.photos && data.photos.length > 0) {
-            photosHTML = `<div class="section"><div class="section-title"> PHOTOS DU CHANTIER</div><div style="display:flex; flex-wrap:wrap; gap:10px;">`;
-            data.photos.forEach(p => {
-                photosHTML += `<img src="${p}" style="max-width:45%; border:1px solid #ddd; border-radius:5px;">`;
-            });
-            photosHTML += `</div></div>`;
+            photosHTML = `<div class="section" style="margin-top:15px; border:1px solid #000;">
+                <div style="background:#000; color:#fff; padding:5px; font-weight:bold;">PHOTOS DU CHANTIER</div>
+                <div style="padding:10px; display:flex; flex-wrap:wrap; gap:10px;">
+                    ${data.photos.map(p => `<img src="${p}" style="max-width:48%; border:1px solid #ddd;">`).join('')}
+                </div>
+            </div>`;
         }
 
         return `
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <meta charset="UTF-8">
-                <title>Rapport Chantier - ${data.date}</title>
-                <style>
-                    body { font-family: 'Segoe UI', Arial, sans-serif; margin: 40px; color: #2c3e50; }
-                    .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #27ae60; padding-bottom: 20px; }
-                    .title { color: #1a252f; font-size: 24px; margin: 10px 0; }
-                    .subtitle { color: #27ae60; font-size: 18px; }
-                    .section { margin-bottom: 25px; page-break-inside: avoid; }
-                    .section-title { background: #1a252f; color: white; padding: 10px; border-radius: 5px; font-size: 16px; margin-bottom: 15px; }
-                    .info-row { margin-bottom: 10px; }
-                    .label { font-weight: bold; color: #1a252f; display: inline-block; min-width: 200px; }
-                    .value { margin-left: 10px; }
-                    table { width: 100%; margin-top: 10px; }
-                    th, td { padding: 8px; text-align: left; }
-                    .logo { text-align: center; margin-bottom: 20px; }
-                    .footer { margin-top: 40px; text-align: center; font-size: 12px; color: #7f8c8d; border-top: 1px solid #ddd; padding-top: 20px; }
-                </style>
-            </head>
-            <body>
-                <div class="header">
-                    <h1 class="title">--------------------------------------------------
-                         Projet : Travaux de plantation d’alignement et de reboisement compensatoire de sites d’emprunt – Autoroute Dakar-Tivaouane-Saint Louis – Lot 2 (Guéoul - Louga)
-                                     --------------------------------------------------</h1>
-        
-                </div>
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: 'Arial', sans-serif; margin: 20px; color: #000; font-size: 12px; }
+        .header-table { width: 100%; border: none; margin-bottom: 10px; }
+        .official-text { text-align: center; font-weight: bold; font-size: 11px; }
+        .report-title { 
+            text-align: center; font-weight: bold; border: 2px solid #000; 
+            padding: 10px; margin: 15px 0; background-color: #f2f2f2; text-transform: uppercase;
+        }
+        .section { margin-top: 10px; border: 1px solid #000; }
+        .section-title { background: #000; color: #fff; padding: 4px 10px; font-weight: bold; text-transform: uppercase; }
+        .content { padding: 8px; }
+        .label { font-weight: bold; text-decoration: underline; }
+        .footer-sig { margin-top: 30px; display: flex; justify-content: flex-end; }
+        .visa { border: 1px solid #000; padding: 10px; width: 220px; text-align: center; }
+    </style>
+</head>
+<body>
+    <table class="header-table">
+        <tr>
+            <td width="33%" class="official-text">
+                REPUBLIQUE DU SENEGAL<br>Un Peuple - Un But - Une Foi<br>-------
+            </td>
+            <td width="33%" style="text-align:center;"><strong>AGEROUTE</strong></td>
+            <td width="33%" style="text-align:right; font-size:10px;">OPEC FUND / SINOHYDRO / APERAM</td>
+        </tr>
+    </table>
 
-                <div class="section">
-                    <div class="section-title"> GÉNÉRAL</div>
-                    <div class="info-row"><span class="label">Date :</span><span class="value">${data.date}</span></div>
-                    <div class="info-row"><span class="label">Responsable APERAM :</span><span class="value">${data.responsable}</span></div>
-                </div>
+    <div class="report-title">
+        Projet : Travaux de plantation d’alignement et de reboisement compensatoire de sites d’emprunt – Autoroute Dakar-Tivaouane-Saint Louis – Lot 2 (Guéoul - Louga)<br>
+        <span style="font-size:14px;">RAPPORT JOURNALIER DE CHANTIER : AMÉNAGEMENT PAYSAGER</span>
+    </div>
 
-                <div class="section">
-                    <div class="section-title">LOCALISATION ET CONDITIONS</div>
-                    <div class="info-row"><span class="label">Localité/Commune :</span><span class="value">${data.localite}</span></div>
-                    <div class="info-row"><span class="label">Type de site :</span><span class="value">${data.type_site}</span></div>
-                    <div class="info-row"><span class="label">Commentaire site :</span><span class="value">${data.comm_site}</span></div>
-                    <div class="info-row"><span class="label">Météo :</span><span class="value">${data.meteo}</span></div>
-                    <div class="info-row"><span class="label">Commentaire météo :</span><span class="value">${data.comm_meteo}</span></div>
-                </div>
+    <div style="margin-bottom:10px;">
+        <p><strong>Date :</strong> ${data.date} | <strong>Responsable APERAM :</strong> ${data.responsable}</p>
+    </div>
 
-                <div class="section">
-                    <div class="section-title">SUIVI DES ACTIVITÉS TECHNIQUES</div>
-                    ${techHTML}
-                </div>
+    <div class="section">
+        <div class="section-title">1. LOCALISATION ET CONDITIONS</div>
+        <div class="content">
+            <div><span class="label">Localité/Commune :</span> ${data.localite}</div>
+            <div><span class="label">Type de site :</span> ${data.type_site}</div>
+            <div style="font-style:italic;">Commentaire : ${data.comm_site}</div>
+            <hr style="margin:5px 0; border:0; border-top:1px solid #ccc;">
+            <div><span class="label">Météo :</span> ${data.meteo}</div>
+            <div style="font-style:italic;">Commentaire météo : ${data.comm_meteo}</div>
+        </div>
+    </div>
 
-                <div class="section">
-                    <div class="section-title">RESSOURCES ET LOGISTIQUE</div>
-                    <div class="info-row"><span class="label">Main-d'œuvre :</span></div>
-                    ${equipesHTML}
-                    <div class="info-row"><span class="label">Commentaires main-d'œuvre :</span><span class="value">${data.comm_ressources}</span></div>
-                    <div class="info-row"><span class="label">Matériel utilisé :</span><span class="value">${data.materiel}</span></div>
-                    <div class="info-row"><span class="label">Commentaires matériel :</span><span class="value">${data.comm_materiel}</span></div>
-                    <div class="info-row"><span class="label">Approvisionnement :</span><span class="value">${data.approvisionnement}</span></div>
-                    <div class="info-row"><span class="label">Commentaires approvisionnement :</span><span class="value">${data.comm_approv}</span></div>
-                </div>
+    <div class="section">
+        <div class="section-title">2. SUIVI DES ACTIVITÉS TECHNIQUES</div>
+        <div class="content">${techHTML}</div>
+    </div>
 
-                <div class="section">
-                    <div class="section-title">ÉTAT PHYTOSANITAIRE ET OBSERVATIONS</div>
-                    <div class="info-row"><span class="label">Espèces concernées :</span><span class="value">${data.especes}</span></div>
-                    <div class="info-row"><span class="label">Commentaires espèces :</span><span class="value">${data.comm_especes}</span></div>
-                    <div class="info-row"><span class="label">Santé des plants :</span><span class="value">${data.sante_plants}</span></div>
-                    <div class="info-row"><span class="label">Commentaires santé :</span><span class="value">${data.comm_sante}</span></div>
-                    <div class="info-row"><span class="label">Produits utilisés :</span><span class="value">${data.produits}</span></div>
-                    <div class="info-row"><span class="label">Commentaire produits :</span><span class="value">${data.comm_produits}</span></div>
-                    <div class="info-row"><span class="label">Points critiques :</span><span class="value">${data.points_critiques}</span></div>
-                    <div class="info-row"><span class="label">Commentaires points critiques :</span><span class="value">${data.comm_points_critiques}</span></div>
-                </div>
+    <div class="section">
+        <div class="section-title">3. RESSOURCES ET LOGISTIQUE</div>
+        <div class="content">
+            ${equipesHTML}
+            <div style="margin-top:10px;"><span class="label">Matériel :</span> ${data.materiel}</div>
+            <div style="font-style:italic;">Commentaire matériel : ${data.comm_materiel}</div>
+            <div style="margin-top:5px;"><span class="label">Approvisionnement :</span> ${data.approvisionnement}</div>
+        </div>
+    </div>
 
-                <div class="section">
-                    <div class="section-title">RÉSULTATS ATTENDUS (INDICATEURS)</div>
-                    <div class="info-row"><span class="value">${data.resultats_attendus}</span></div>
-                </div>
+    <div class="section">
+        <div class="section-title">4. ÉTAT PHYTOSANITAIRE ET OBSERVATIONS</div>
+        <div class="content">
+            <div><span class="label">Espèces :</span> ${data.especes}</div>
+            <div><span class="label">Santé des plants :</span> ${data.sante_plants}</div>
+            <div style="margin-top:5px;"><span class="label">Points critiques :</span> ${data.points_critiques}</div>
+            <div style="font-style:italic;">Détails : ${data.comm_points_critiques}</div>
+        </div>
+    </div>
 
-                <div class="section">
-                    <div class="section-title">COORDONNÉES GPS</div>
-                    <div class="info-row"><span class="label">Latitude :</span><span class="value">${data.lat}</span></div>
-                    <div class="info-row"><span class="label">Longitude :</span><span class="value">${data.lon}</span></div>
-                </div>
+    <div class="section">
+        <div class="section-title">5. RÉSULTATS ATTENDUS (INDICATEURS)</div>
+        <div class="content">${data.resultats_attendus}</div>
+    </div>
 
-                ${photosHTML}
+    <div style="margin-top:10px; font-weight:bold;">COORDONNÉES GPS : Lat ${data.lat} / Lon ${data.lon}</div>
 
-                <div class="section">
-                    <div class="section-title">OBSERVATIONS GÉNÉRALES</div>
-                    <div class="info-row"><span class="value">${data.commentaire}</span></div>
-                </div>
+    ${photosHTML}
 
-                <div class="footer">
-                    <p>Document généré le ${new Date().toLocaleString()}</p>
-                    <p>REPUBLIQUE DU SENEGAL - Un Peuple - Un But - Une Foi</p>
-                </div>
-            </body>
-            </html>
-        `;
-    }
+    <div class="footer-sig">
+        <div class="visa">
+            <strong>Visa Superviseur (APERAM)</strong><br><br><br>
+            __________________________
+        </div>
+    </div>
 
-    // Export PDF
-    function exportPDF() {
-        const htmlContent = generateExportHTML();
-        const opt = {
-            margin: [0.5, 0.5, 0.5, 0.5],
-            filename: `Rapport_Chantier_${document.getElementById('date').value || 'SansDate'}.pdf`,
-            image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2, useCORS: true, logging: false },
-            jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
-        };
-        
-        const element = document.createElement('div');
-        element.innerHTML = htmlContent;
-        document.body.appendChild(element);
-        
-        html2pdf().set(opt).from(element).save().then(() => {
-            document.body.removeChild(element);
-        });
+    <div style="text-align:center; font-size:9px; color:#666; margin-top:20px;">
+        Document généré le ${new Date().toLocaleString()} - REPUBLIQUE DU SENEGAL
+    </div>
+</body>
+</html>`;
     }
 
     // Export Word
     function exportWord() {
         const htmlContent = generateExportHTML();
-        const blob = new Blob([htmlContent], { type: 'application/msword' });
-        const link = document.createElement('a');
+        const blob = new Blob(['\ufeff', htmlContent], { type: 'application/msword' });
         const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
         link.href = url;
         link.download = `Rapport_Chantier_${document.getElementById('date').value || 'SansDate'}.doc`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-        URL.revokeObjectURL(url);
     }
 
     // Export Excel des informations du personnel
