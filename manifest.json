@@ -13,7 +13,7 @@
   "background_color": "#1a252f",
   "display": "standalone",
   "scope": ".",
-  "theme_color": "#27ae60",
+  "theme_color": "#2980b9",
   "description": "Application de suivi journalier de chantier Louga",
   "orientation": "portrait"
 }
